@@ -1,6 +1,133 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300&family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&display=swap');
 
-body {
-    font-size: larger;
-    font-family: 'Montserrat', sans-serif;
+:root {
+    --body-color: 10 10 10;
+
+    --font-color: 255 255 255;
+    --highlight-color: 33 150 243;
+
+    --theme-background: 30 45 67;
+
+    --theme-light: 51 55 63;
+    --theme-medium: 41 43 48;
+    --theme-dark: 31 33 38;
+
+    --green: 76 175 80;
 }
+
+body,
+main {
+    height: 100vh;
+    width: 100vw;
+    margin: 0px;
+    background-color: rgb(var(--body-color));
+    font-size: 1.5rem;
+    font-family: 'Montserrat', sans-serif;
+    color: #c0c0c0;
+}
+
+
+/* h1,
+h2,
+h3,
+h4, */
+input,
+select,
+button,
+span,
+a,
+p {
+    color: rgb(var(--font-color));
+    font-family: "Rubik", sans-serif;
+    font-size: 1rem;
+    font-weight: 400;
+    margin: 0px;
+}
+
+.highlight {
+    color: rgb(var(--highlight-color));
+}
+
+#main-wrapper {
+    height: 100%;
+    background-color: rgb(var(--theme-medium));
+    overflow: auto;
+    gap: 0.75rem;
+}
+
+
+.results-container {
+    background-color: rgb(53, 53, 53);
+    display: flex;
+    flex-direction: row;
+    width: 100vw - 2rem;
+    margin: 2rem auto;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+
+}
+
+/* .section {} */
+
+.result {
+    justify-content: space-between;
+    position: relative;
+    background-color: rgb(var(--theme-dark));
+    padding: 1rem;
+    margin: 1rem;
+    width: 12rem;
+    border-radius: 0.5rem;
+}
+
+.result>.thumbnail {}
+
+.result>.thumbnail>img {
+    width: 70%;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 0.5rem
+}
+
+.result>.product-details-container {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: 0.5rem;
+
+}
+
+.result>.product-details-container>.product-desc {
+    font-size: small;
+    /* display: flex;
+    align-items: center; */
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: medium;
+    text-align: left;
+    /* flex; */
+}
+
+
+.result>.product-details-container>.product-details-metadata-container {
+    display: flex;
+    /* flex: 2 1 auto; */
+    flex-direction: row;
+}
+
+.product-details-metadata-container>* {
+    font-size: small;
+    padding: 0.5rem;
+    /* flex-grow: 1 */
+}
+
+.product-details-metadata-container>.left {
+    text-align: left;
+}
+
+.product-details-metadata-container>.right {
+    text-align: right;
+}
+
+
+/* .section-content-items {} */
