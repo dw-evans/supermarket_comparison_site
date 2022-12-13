@@ -1,17 +1,15 @@
 from __future__ import annotations
 
-# A place to store utility functions
 from dataclasses import dataclass, field
 from enum import Enum
 import re
-
-
-# change to .site_query
-from .site_query import WaitroseRequest, AsdaRequest
-from .site_query import to_pickle
-
 import pickle
 from pathlib import Path
+
+
+from .query import WaitroseRequest, AsdaRequest
+from .query import to_pickle
+
 
 from abc import ABC, abstractmethod
 
@@ -35,6 +33,9 @@ class Currency(Enum):
         # get the exchange rate from self to another currency
         return self.__class__.exchange_rate(self, currency2)
 
+    def __str__(self):
+        return self.value.upper()
+
 
 class UnitTypes(Enum):
     # standardize unit types for consistency
@@ -57,6 +58,12 @@ class Unit(Enum):
 
     def get_type(self):
         return self.value[1]
+
+    def get_repr(self):
+        return self.value[0]
+
+    def __str__(self):
+        return self.value[0].upper()
 
     @staticmethod
     def units_are_compatible(unit1: Unit, unit2: Unit):
@@ -119,6 +126,9 @@ class Price:
             currency=to_currency,
         )
 
+    def __str__(self):
+        return f"{self.amount:.2f} {self.currency.__str__()}"
+
 
 @dataclass
 class Quantity:
@@ -133,6 +143,9 @@ class Quantity:
                 unit=to_unit,
             )
         return self
+
+    def __str__(self):
+        return f"{self.amount} {self.unit}"
 
 
 @dataclass

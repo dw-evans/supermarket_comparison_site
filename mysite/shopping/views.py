@@ -1,42 +1,62 @@
 from django.shortcuts import render
 
-
-from utils.site_query import run_and_pickle_request, open_those_pickles
-from utils.site_query import WaitroseRequest, AsdaRequest
+from utils.query import run_and_pickle_request, open_those_pickles
+from utils.query import WaitroseRequest, AsdaRequest
 from utils.main import WaitroseItem
 
 
-def index(request):
+def home(request):
 
-    # run_and_pickle_request("milk")
+    if request.method == "POST":
 
-    # asda, waitrose = open_those_pickles()
+        query = request.POST["query"]
 
-    item_list = [
-        WaitroseItem(item) for item in WaitroseRequest("milk").get_items_as_list()
-    ]
+        items = item_list = [
+            WaitroseItem(item)
+            for item in WaitroseRequest(query, max_items=10).get_items_as_list()
+        ]
 
-    context = {
-        "item_list": [item for item in item_list if not item.is_null],
-        "null_item_list": [item for item in item_list if item.is_null],
-    }
+        items = [item for item in items if not item.is_null]
 
-    return render(request=request, template_name="shopping/index.html", context=context)
+        context = {
+            "search_term": query,
+            "item_list": items,
+        }
+
+        return render(
+            request=request,
+            template_name="shopping/home.html",
+            context=context,
+        )
+
+    else:
+
+        context = {
+            "search_term": "no search yet bro",
+        }
+
+        return render(
+            request=request,
+            template_name="shopping/home.html",
+            context=context,
+        )
 
 
-def search(request, search_string):
+# def search(request, search_string):
 
-    item_list = [
-        WaitroseItem(item)
-        for item in WaitroseRequest(search_string).get_items_as_list()
-    ]
+#     # search_string = request.GET["query"]
 
-    context = {
-        "search_term": search_string,
-        "item_list": [item for item in item_list if not item.is_null],
-        "null_item_list": [item for item in item_list if item.is_null],
-    }
+#     item_list = [
+#         WaitroseItem(item)
+#         for item in WaitroseRequest(search_string, max_items=10).get_items_as_list()
+#     ]
 
-    return render(
-        request=request, template_name="shopping/search.html", context=context
-    )
+#     context = {
+#         "search_term": search_string,
+#         "item_list": [item for item in item_list if not item.is_null],
+#         # "null_item_list": [item for item in item_list if item.is_null],
+#     }
+
+#     return render(
+#         request=request, template_name="shopping/search.html", context=context
+#     )

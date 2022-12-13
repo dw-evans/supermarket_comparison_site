@@ -30,14 +30,16 @@ class WaitroseRequest(GrocerySearchRequest):
     """Does a post request to the waitrose search api and stores the response
     Needs to be modified to handle item lists > 128 per page"""
 
-    def __init__(self, search_term: str):
+    def __init__(self, search_term: str, max_items: int = 5000):
         self.search_term = search_term
+        self.max_items = max_items
         self.multi_query()
         # self.query(search_term=search_term)
 
     def query(
         self, search_term: str, start: int, size: int = WAITROSE_MAX_REQUEST_SIZE
     ) -> "httpresponse":
+
         url = "https://www.waitrose.com/api/content-prod/v2/cms/publish/productcontent/search/-1"
 
         querystring = {"clientType": "WEB_APP"}
@@ -71,15 +73,32 @@ class WaitroseRequest(GrocerySearchRequest):
 
     def multi_query(self):
         self.response_list = []
-        print(self.get_total_items())
-        for i in range(self.get_total_items() // WAITROSE_MAX_REQUEST_SIZE + 1):
-            print(f"i={i}")
+
+        # if max_requested items is less or eq to default page size
+        if self.max_items <= WAITROSE_MAX_REQUEST_SIZE:
+            print("in here")
+            self.response_list.append(
+                self.query(
+                    search_term=self.search_term,
+                    start=1,
+                    size=self.max_items,
+                )
+            )
+            return
+
+        # normal requests (>128)
+        for i in range(
+            min(self.get_total_items(), self.max_items) // WAITROSE_MAX_REQUEST_SIZE + 1
+        ):
+            print("in other here")
             self.response_list.append(
                 self.query(
                     search_term=self.search_term,
                     start=1 + WAITROSE_MAX_REQUEST_SIZE * i,
+                    size=WAITROSE_MAX_REQUEST_SIZE,
                 )
             )
+        return
 
     def get_items_as_list(self) -> list:
         res = []
