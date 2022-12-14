@@ -9,6 +9,9 @@ def home(request):
 
     if request.method == "POST":
 
+        print(request.headers)
+        print(request.POST)
+
         query = request.POST["query"]
 
         items = item_list = [

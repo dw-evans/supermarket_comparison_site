@@ -1,16 +1,19 @@
-from utils.query import WaitroseRequest, AsdaRequest
-from utils.query import run_and_pickle_request, open_those_pickles
+from utils.query import *
+from utils.main import *
+
 from pathlib import Path
 
 
+from utils.query import WaitroseRequest, AsdaRequest
+from utils.query import run_and_pickle_request, open_those_pickles
+
+
 def test_site_query_pickling():
+
     run_and_pickle_request("oats")
+    waitrose = open_those_pickles()
 
-    asda, waitrose = open_those_pickles()
-
-    assert (type(asda.get_items_as_list()) == list) and (
-        type(waitrose.get_items_as_list()) == list
-    )
+    assert type(waitrose.get_items_as_list()) == list
 
 
 class TestWaitroseRequest:

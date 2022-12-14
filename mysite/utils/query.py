@@ -296,27 +296,25 @@ def open_pickle(fpath):
     return data
 
 
-def run_and_pickle_request(search_term):
+def run_and_pickle_request(search_term, max_items=10):
     # a test to run a search request on multiple supermarkets and store the result in a pickle
     # idea being to not spam servers or to store a test dataset.
 
-    a = AsdaRequest(search_term=search_term)
-
-    b = WaitroseRequest(search_term=search_term)
-
-    path1 = Path(__file__).parent / "pkl/asda.pkl"
-    to_pickle(a, path1)
+    b = WaitroseRequest(search_term=search_term, max_items=max_items)
 
     path2 = Path(__file__).parent / "pkl/waitrose.pkl"
     to_pickle(b, path2)
 
+    # a = AsdaRequest(search_term=search_term)
 
-def open_those_pickles():
+    # path1 = Path(__file__).parent / "pkl/asda.pkl"
+    # to_pickle(a, path1)
+
+
+def open_those_pickles() -> "pkl":
     # opening the pickles from run and pickle request.
-    path1 = Path(__file__).parent / "pkl/asda.pkl"
     path2 = Path(__file__).parent / "pkl/waitrose.pkl"
 
-    asda = open_pickle(path1)
     waitrose = open_pickle(path2)
 
-    return asda, waitrose
+    return waitrose

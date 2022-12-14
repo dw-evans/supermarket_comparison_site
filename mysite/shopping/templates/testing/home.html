@@ -7,26 +7,34 @@
 
 
         <div id="main-wrapper">
-            <div class="results-container">
-                <div class="result">
-                    <div class="thumbnail">
-                        <img src="https://m.media-amazon.com/images/I/51+-Di1h4jL._SY344_BO1,204,203,200_.jpg">
-                    </div>
-                    <div class="product-details-container">
-                        <div class="product-desc">
-                            <div>This is a long product description, my name is Daniel Evans and I</div>
+            <form id="form" method="post">
+                {% csrf_token %}
+                <input type="search" name="query" placeholder="Search...">
+                <button>Search</button>
+            </form>
+
+            <div>
+                <div class="results-container">
+                    <div class="result">
+                        <div class="thumbnail">
+                            <img src="https://m.media-amazon.com/images/I/51+-Di1h4jL._SY344_BO1,204,203,200_.jpg">
                         </div>
-                        <div class="product-details-metadata-container">
-                            <div class="left">0.00 GPB</div>
-                            <div class="right">2.42 L</div>
+                        <div class="product-details-container">
+                            <div class="product-desc">
+                                <div>This is a long product description, my name is Daniel Evans and I</div>
+                            </div>
+                            <div class="product-details-metadata-container">
+                                <div class="left">0.00 GPB</div>
+                                <div class="right">2.42 L</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="result">
-                    text2
-                </div>
-                <div class="result">
-                    text3
+                    <div class="result">
+                        text2
+                    </div>
+                    <div class="result">
+                        text3
+                    </div>
                 </div>
             </div>
         </div>
@@ -34,11 +42,6 @@
 
         <h1>shopping/search.html</h1>
 
-        <form id="form" method="post">
-            {% csrf_token %}
-            <input type="search" name="query" placeholder="Search...">
-            <button>Search</button>
-        </form>
 
 
         <h2>Searched for: "{{ search_term }}"</h2>

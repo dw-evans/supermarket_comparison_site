@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import Enum, auto
 import re
 import pickle
 from pathlib import Path
@@ -286,6 +286,42 @@ class AsdaItem(Item):
         return "https://ui.assets-asda.com/dm/asdagroceries/{}?$ProdList$=&fmt=webp&qlt=50".format(
             self.raw_item["item"]["upc_numbers"][0]
         )
+
+
+# Filtering things
+class ItemListFilters:
+    class StoreFilterEnum(Enum):
+        pass
+
+    class PriceFilterEnum(Enum):
+        HIGHEST = auto()
+        LOWEST = auto()
+        HIGHEST_BY_UNIT = auto()
+        LOWEST_BY_UNIT = auto()
+        pass
+
+    class QuantityFilterEnum(Enum):
+        HIGHEST = auto()
+        LOWEST = auto()
+        pass
+
+    class PriceFilter:
+        def filter(self, filter: ItemListFilters.PriceFilterEnum) -> list[Item]:
+            if filter == ItemListFilters.PriceFilterEnum.HIGHEST:
+                print("filtering by highest price")
+
+    class StoreFilter:
+        pass
+
+    class QuantityFilter:
+        pass
+
+
+@dataclass
+class ItemListFilterObj:
+    store_filter: ItemListFilters.StoreFilter
+    price_filter: ItemListFilters.PriceFilter
+    quantity_filter: ItemListFilters.QuantityFilter
 
 
 if __name__ == "__main__":
