@@ -101,7 +101,6 @@ p {
     background-color: rgb(var(--theme-light));
     display: flex;
     flex-direction: row;
-    /* width: 95%; */
     margin: 2rem;
     padding: 1.5rem;
     border-radius: 0.5rem;
@@ -117,7 +116,7 @@ p {
     background-color: rgb(var(--theme-medium));
     padding: 0.5rem;
     margin: 0.5rem;
-    min-width: 10rem;
+    width: clamp(30rem, 30rem);
     border-radius: 0.5rem;
 }
 
