@@ -5,62 +5,37 @@
 <body>
     <main>
 
-
         <div id="main-wrapper">
-            <div class="results-container">
+            <div class="search-form">
+                <form id="form" method="post">
+                    {% csrf_token %}
+                    <input type="search" name="query" placeholder="Search...">
+                    <button>Search</button>
+                </form>
+            </div>
+
+            {% if item_list %}
+            <div class="results-container fancy-scrollbar">
+                {% for item in item_list %}
                 <div class="result">
                     <div class="thumbnail">
-                        <img src="https://m.media-amazon.com/images/I/51+-Di1h4jL._SY344_BO1,204,203,200_.jpg">
+                        <img src="{{item.thumbnail}}">
                     </div>
                     <div class="product-details-container">
                         <div class="product-desc">
-                            <div>This is a long product description, my name is Daniel Evans and I</div>
+                            <div>{{ item.description }}</div>
                         </div>
                         <div class="product-details-metadata-container">
-                            <div class="left">0.00 GPB</div>
-                            <div class="right">2.42 L</div>
+                            <div class="left">{{item.price}}</div>
+                            <div class="right">{{item.quantity}}</div>
                         </div>
                     </div>
                 </div>
-                <div class="result">
-                    text2
-                </div>
-                <div class="result">
-                    text3
-                </div>
+                {% endfor %}
             </div>
+            {% endif %}
         </div>
 
-
-        <h1>shopping/search.html</h1>
-
-        <form id="form" method="post">
-            {% csrf_token %}
-            <input type="search" name="query" placeholder="Search...">
-            <button>Search</button>
-        </form>
-
-
-        <h2>Searched for: "{{ search_term }}"</h2>
-
-        {% if item_list %}
-        <ul>
-            {% for item in item_list %}
-            <li>
-                <ul>
-                    <!-- <li>{{ item.store }}</li> -->
-                    <li>{{ item.description }}</li>
-                    <li>{{ item.price }}</li>
-                    <li>{{ item.quantity }}</li>
-                    <li><img src="{{ item.thumbnail }}"></li>
-
-
-                </ul>
-                <br>
-            </li>
-            {% endfor %}
-        </ul>
-        {% endif %}
 
     </main>
 </body>
