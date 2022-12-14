@@ -56,8 +56,12 @@ class Unit(Enum):
     L = ("l", UnitTypes.VOLUME)
     ML = ("ml", UnitTypes.VOLUME)
 
-    def get_type(self):
+    @property
+    def unit_type(self):
         return self.value[1]
+
+    def get_type(self):
+        return self.unit_type
 
     def get_repr(self):
         return self.value[0]
@@ -68,8 +72,8 @@ class Unit(Enum):
     @staticmethod
     def units_are_compatible(unit1: Unit, unit2: Unit):
         # check the compatibility of units for conversion
-        type1 = unit1.get_type()
-        type2 = unit2.get_type()
+        type1 = unit1.unit_type
+        type2 = unit2.unit_type
 
         if not type1 == type2:
             print(f"Units incompliant of types: {type1}, {type2}")
@@ -82,27 +86,27 @@ class Unit(Enum):
     @classmethod
     def conversion_factor(cls, unit1: Unit, unit2: Unit) -> float:
         # determine the conversion factor for a unit conversion
-        type1 = unit1.get_type()
-        type2 = unit2.get_type()
 
         # if units arent compatible, return
-        if not cls.units_are_compatible():
+        if not cls.units_are_compatible(unit1, unit2):
             return
+
+        type1 = unit1.unit_type
 
         # weight units
         if type1 == UnitTypes.WEIGHT:
             e = {
                 Unit.KG: 1,
-                Unit.G: 0.001,
+                Unit.G: 1000,
             }
-            return e[type2] / e[type1]
+            return e[unit2] / e[unit1]
         # volume units
         if type1 == UnitTypes.VOLUME:
             e = {
                 Unit.L: 1,
-                Unit.ML: 0.001,
+                Unit.ML: 1000,
             }
-            return e[type2] / e[type1]
+            return e[unit2] / e[unit1]
         return
 
     # something like convert_to_si_units
@@ -116,9 +120,20 @@ class Store(Enum):
 
 @dataclass
 class Price:
-    # stores price in amount and currency
+    """stores price in amount and currency"""
+
     amount: float
     currency: Currency
+
+    # def __post_init__(self):
+    #     if self.currency is None:
+    #         self.currency = Currency.GBP
+
+    def get_amount(self):
+        return self.amount
+
+    def get_currency(self):
+        return self.currency
 
     def convert_to(self, to_currency: Currency) -> Price:
         return Price(
@@ -132,20 +147,66 @@ class Price:
 
 @dataclass
 class Quantity:
-    # stores a quanity as a float and unit
+    """stores a quantity amount and a unit"""
+
     amount: float
     unit: Unit
 
+    def get_amount(self):
+        return self.amount
+
+    def get_unit(self):
+        return self.unit
+
     def convert_to(self, to_unit: Unit) -> Quantity:
         if Unit.units_are_compatible(self.unit, to_unit):
+            cf = Unit.conversion_factor(self.unit, to_unit)
             return Quantity(
-                amount=self.amount * Unit.conversion_factor(self.unit, to_unit),
+                amount=self.amount * cf,
                 unit=to_unit,
             )
         return self
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.amount} {self.unit}"
+
+    def to_si(self) -> Quantity:
+        """Returns quantity in SI_units if applicable, else returns self"""
+        # Convert weights to SI
+        if self.unit.unit_type == UnitTypes.WEIGHT:
+            return self.convert_to(Unit.KG)
+        # Convert volumes to SI
+        elif self.unit.unit_type == UnitTypes.VOLUME:
+            return self.convert_to(Unit.L)
+        # return self for non convertible units
+        return self
+
+
+@dataclass
+class UnitPrice:
+    price: Price
+    per_unit: Unit
+
+    def get_price(self):
+        return self.price
+
+    def get_per_unit(self):
+        return self.per_unit
+
+    def __str__(self):
+        return f"{self.price}/{self.per_unit}"
+
+    @classmethod
+    def calculate(cls, price: Price, quantity=Quantity):
+        si_quantity = quantity.to_si()
+
+        return cls(
+            price=Price(
+                amount=price.amount / si_quantity.amount,
+                currency=price.currency,
+            ),
+            per_unit=si_quantity.unit,
+        )
 
 
 @dataclass
@@ -158,9 +219,18 @@ class Item(ABC):
     thumbnail: str = field(repr=False)
     is_null: bool
 
+    def get_price(self):
+        return self.price
+
+    def get_quantity(self):
+        return self.quantity
+
     @property
     def unit_price(self):
-        return Price(self.price.amount / self.quantity.amount, self.price.currency)
+        return UnitPrice.calculate(
+            price=self.price,
+            quantity=self.quantity,
+        )
 
 
 # map from response json string to local unit system
@@ -188,19 +258,45 @@ class WaitroseItem(Item):
         self.is_null = False
 
         self.store = Store.WAITROSE
-        self.description = self.get_description()
-        self.price = self.get_price()
-        self.quantity = self.get_quanity()
-        self.thumbnail = self.get_thumbnail()
+        self.description = self.fetch_description()
+        self.price = self.fetch_price()
+        self.quantity = self.fetch_quanity()
+        self.thumbnail = self.fetch_thumbnail()
 
-    def get_description(self) -> str:
+    @staticmethod
+    def get_quantity_from_string(string: str) -> Quantity:
+        # regex to find a few different cases for waitrose
+        qty_info = re.findall(r"\D+|\d*\.?\d+", string.strip(" "))
+        # print(qty_info)
+        # handle the 12x300g cases
+        if qty_info[1].lower() == "x":
+            amount = float(qty_info[0]) * float(qty_info[2])
+        else:
+            amount = float(qty_info[0])
+
+        try:
+            unit = Unit(STORE_UNIT_MAP[Store.WAITROSE][qty_info[-1]])
+        except:
+            unit = Unit.NULL
+
+        return Quantity(
+            amount=amount,
+            unit=unit,
+        )
+
+    @staticmethod
+    def get_price_from_float(flt: float) -> Price:
+        currency = Currency.GBP
+        return Price(flt, currency)
+
+    def fetch_description(self) -> str:
         try:
             return self.raw_item["searchProduct"]["name"]
         except:
             self.is_null = True
             return ""
 
-    def get_price(self) -> Price:
+    def fetch_price(self) -> Price:
         try:
             amount = self.raw_item["searchProduct"]["currentSaleUnitPrice"]["price"][
                 "amount"
@@ -210,32 +306,19 @@ class WaitroseItem(Item):
         except:
             return Price(0, Currency.GBP)
 
-    def get_quantity_root(self):
+    def get_quantity_root(self) -> "dict or str":
+        # pulls the raw root of quantity strying
         return self.raw_item["searchProduct"]["size"]
 
-    def get_quanity(self) -> Quantity:
+    def fetch_quanity(self) -> Quantity:
         try:
             size = self.get_quantity_root()
-            qty_info = re.findall(r"\D+|\d*\.?\d+", size.strip(" "))
-            # handle the 12x300g cases
-            if qty_info[1].lower() == "x":
-                amount = float(qty_info[0]) * float(qty_info[2])
-            else:
-                amount = float(qty_info[0])
+            return self.get_quantity_from_string(size)
 
-            try:
-                unit = Unit(STORE_UNIT_MAP[Store.WAITROSE][qty_info[-1]])
-            except:
-                unit = Unit.NULL
-
-            return Quantity(
-                amount=amount,
-                unit=unit,
-            )
         except:
             return Quantity(0, Unit.NULL)
 
-    def get_thumbnail(self):
+    def fetch_thumbnail(self):
         try:
             return self.raw_item["searchProduct"]["thumbnail"]
         except:
@@ -248,23 +331,22 @@ class AsdaItem(Item):
         self.raw_item = raw_item
 
         self.store = Store.ASDA
-        self.description = self.get_description()
-        self.thumbnail = self.get_thumbnail()
-        self.price = self.get_price()
-        self.quantity = self.get_quanity()
+        self.description = self.fetch_description()
+        self.thumbnail = self.fetch_thumbnail()
+        self.price = self.fetch_price()
+        self.quantity = self.fetch_quanity()
         self.is_null = False
 
     # todo add try excepts to each of these
-    def get_description(self) -> str:
-
+    def fetch_description(self) -> str:
         return self.raw_item["item"]["name"]
 
-    def get_price(self) -> Price:
+    def fetch_price(self) -> Price:
         return Price(
             float(self.raw_item["price"]["price_info"]["price"][1:]), Currency.GBP
         )
 
-    def get_quanity(self) -> Quantity:
+    def fetch_quanity(self) -> Quantity:
         size = self.raw_item["item"]["extended_item_info"]["weight"]
         qty_info = re.findall(r"\D+|\d*\.?\d+", size.strip(" "))
         if qty_info[1].lower == "x":
@@ -282,46 +364,248 @@ class AsdaItem(Item):
             unit=unit,
         )
 
-    def get_thumbnail(self) -> str:
+    def fetch_thumbnail(self) -> str:
         return "https://ui.assets-asda.com/dm/asdagroceries/{}?$ProdList$=&fmt=webp&qlt=50".format(
             self.raw_item["item"]["upc_numbers"][0]
         )
 
 
 # Filtering things
-class ItemListFilters:
-    class StoreFilterEnum(Enum):
+
+
+class PriceSorterEnum(Enum):
+    """stores price sorting types"""
+
+    HIGHEST_PRICE = auto()
+    LOWEST_PRICE = auto()
+    HIGHEST_UNIT_PRICE = auto()
+    LOWEST_UNIT_PRICE = auto()
+
+
+class QuantitySorterEnum(Enum):
+    """stores quantity sorting types"""
+
+    HIGHEST = auto()
+    LOWEST = auto()
+
+
+class AttributeSorter(ABC):
+    """genetic attribute sorter"""
+
+    def __init__(self, sorter_type: Enum) -> None:
+        super().__init__()
+        self.sorter_type = sorter_type
+
+    def get_sorted_list(self) -> list[Item]:
         pass
 
-    class PriceFilterEnum(Enum):
-        HIGHEST = auto()
-        LOWEST = auto()
-        HIGHEST_BY_UNIT = auto()
-        LOWEST_BY_UNIT = auto()
+    @staticmethod
+    def sorter(
+        item_list: list[Item], item_sort_attribute_func: function, reverse: bool
+    ) -> list[Item]:
+        """generic item list sorter with input function, Default sort from low to high"""
+        new_item_list = item_list.copy()
+        new_item_list.sort(
+            key=lambda item: item_sort_attribute_func(item), reverse=reverse
+        )
+        return new_item_list
+
+
+class PriceSorter(AttributeSorter):
+    """price sorter class"""
+
+    def __init__(self, sorter_enum: PriceSorterEnum) -> None:
+        self.sorter_type = sorter_enum
+
+    # these two functions are a bit shit
+    @staticmethod
+    def _item_price_amount(item: Item):
+        # returns the item price amount
+        return item.price.amount
+
+    @staticmethod
+    def _item_unit_price_amount(item: Item):
+        # returns the item unit price
+        return item.unit_price.price.amount
+
+    def get_sorted_list(self, item_list: list[Item]) -> list[Item]:
+        """sorter function, returns a sorted list of items per the requested filter(sorter) type"""
+        sorter_enum = self.sorter_type
+        if sorter_enum == PriceSorterEnum.HIGHEST_PRICE:
+            print("sorting by highest price")
+            return super().sorter(item_list, self._item_price_amount, reverse=True)
+        elif sorter_enum == PriceSorterEnum.LOWEST_PRICE:
+            print("sortin by lowest price")
+            return super().sorter(item_list, self._item_price_amount, reverse=False)
+        elif sorter_enum == PriceSorterEnum.HIGHEST_UNIT_PRICE:
+            print("sorting by highest unit price")
+            return super().sorter(item_list, self._item_unit_price_amount, reverse=True)
+        elif sorter_enum == PriceSorterEnum.LOWEST_UNIT_PRICE:
+            print("sorting by lowest unit price")
+            return super().sorter(
+                item_list, self._item_unit_price_amount, reverse=False
+            )
+        else:
+            print(
+                f"no compatible type of type:{sorter_enum} found, returning original list"
+            )
+            return item_list
+
+
+class QuantitySorter(AttributeSorter):
+    def __init__(self, sorter_enum: PriceSorterEnum) -> None:
+        self.sorter_type = sorter_enum
+
+    @staticmethod
+    def _item_quantity_amount_in_si(item: Item):
+        return item.quantity.to_si().amount
+
+    @staticmethod
+    def _item_unit_type(item: Item):
+        return item.quantity.unit.unit_type.value
+
+    def get_sorted_list(self, item_list: list[Item]) -> list[Item]:
+        """returns a sorted list, first by a default sort by unit type then by quantity amount in si units of course"""
+        new_item_list = item_list.copy()
+        sorter_enum = self.sorter_type
+        if sorter_enum == QuantitySorterEnum.HIGHEST:
+
+            print("sorting by unit_type then highest quantity")
+            new_item_list = super().sorter(
+                new_item_list, self._item_unit_type, reverse=False
+            )
+            new_item_list = super().sorter(
+                new_item_list, self._item_quantity_amount_in_si, reverse=True
+            )
+            return new_item_list
+        elif sorter_enum == QuantitySorterEnum.LOWEST:
+            print("sorting by unit_type then lowest quantity")
+            new_item_list = super().sorter(
+                new_item_list, self._item_unit_type, reverse=False
+            )
+            new_item_list = super().sorter(
+                new_item_list, self._item_quantity_amount_in_si, reverse=False
+            )
+            return new_item_list
+
         pass
 
-    class QuantityFilterEnum(Enum):
-        HIGHEST = auto()
-        LOWEST = auto()
+
+class AttributeFilter(ABC):
+    """generic attribute filter"""
+
+    def get_filtered_list(self):
         pass
 
-    class PriceFilter:
-        def filter(self, filter: ItemListFilters.PriceFilterEnum) -> list[Item]:
-            if filter == ItemListFilters.PriceFilterEnum.HIGHEST:
-                print("filtering by highest price")
+    def filter_func(
+        item_list: list[Item], item_filter_func: function(Item), reverse: bool
+    ) -> list[Item]:
+        """generic item list filter with input function not used yet"""
+        new_item_list = [item for item in item_list if item_filter_func(item)]
+        return new_item_list
 
-    class StoreFilter:
-        pass
 
-    class QuantityFilter:
-        pass
+from functools import partial
 
 
 @dataclass
-class ItemListFilterObj:
-    store_filter: ItemListFilters.StoreFilter
-    price_filter: ItemListFilters.PriceFilter
-    quantity_filter: ItemListFilters.QuantityFilter
+class PriceFilter(AttributeFilter):
+    # maybe we can do a filter by unit price one too... would need to be paired with a sorter first probably.
+    price_low: Price
+    price_high: Price
+
+    def __post_init__(self):
+        if self.price_low is None:
+            self.price_low = Price(0.0)
+        if self.price_high is None:
+            self.price_high = Price(500.0)
+        self.base_currency = self.price_low.currency
+        self.price_high = self.price_high.convert_to(self.base_currency)
+
+    @staticmethod
+    def _price_amount_is_between(item: Item, lower: Price, upper: Price) -> bool:
+        return (
+            lower.convert_to(Currency.GBP).amount
+            < item.price.convert_to(Currency.GBP).amount
+            < upper.convert_to(Currency.GBP).amount
+        )
+
+    def get_filtered_list(self, item_list: list[Item]):
+        return list(
+            filter(
+                partial(
+                    self._price_amount_is_between,
+                    lower=self.price_low,
+                    upper=self.price_high,
+                ),
+                item_list,
+            )
+        )
+
+
+@dataclass
+class QuantityFilter(AttributeFilter):
+    # maybe we can do a filter by unit price one too... would need to be paired with a sorter first probably.
+    qty_low: Quantity
+    qty_high: Quantity
+
+    def __post_init__(self):
+        if self.qty_low is None:
+            self.qty_low = Quantity(0, Unit.KG)
+        if self.qty_high is None:
+            self.qty_high = Quantity(20, Unit.KG)
+        self.base_unit = self.qty_low.unit
+        self.qty_high = self.qty_high.convert_to(self.base_unit)
+
+    @staticmethod
+    def _quantity_amount_in_si_is_between(item: Item, low: Quantity, high: Quantity):
+        return low.to_si().amount <= item.quantity.to_si().amount <= high.to_si().amount
+
+    @staticmethod
+    def _quantity_is_of_same_unit_type(item: Item, unit_type: UnitTypes):
+        return item.quantity.unit.unit_type == unit_type
+
+    def get_filtered_list(self, item_list: list[Item]):
+        new_item_list = item_list.copy()
+        new_item_list = list(
+            filter(
+                partial(
+                    self._quantity_is_of_same_unit_type,
+                    unit_type=self.base_unit.unit_type,
+                ),
+                new_item_list,
+            )
+        )
+        new_item_list = list(
+            filter(
+                partial(
+                    self._quantity_amount_in_si_is_between,
+                    low=self.qty_low,
+                    high=self.qty_high,
+                ),
+                new_item_list,
+            )
+        )
+        return new_item_list
+
+
+class ItemListFilter:
+    def __init__(self, sorter: AttributeSorter, filters: list[AttributeFilter] = []):
+        self.sorter = sorter
+        self.filters = filters
+
+    def get_new_list(self, item_list: list[Item]) -> list[Item]:
+        # return self.sorter.get_sorted_list(item_list)
+
+        new_item_list = item_list.copy()
+        if self.filters:
+            for filter_i in self.filters:
+                new_item_list = filter_i.get_filtered_list(new_item_list)
+
+        if self.sorter:
+            new_item_list = self.sorter.get_sorted_list(item_list)
+
+        return new_item_list
 
 
 if __name__ == "__main__":

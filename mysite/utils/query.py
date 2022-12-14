@@ -7,6 +7,10 @@ from pathlib import Path
 
 
 class GrocerySearchRequest(ABC):
+    def __init__(self):
+        print(f"Initializing GrocerySearchRequest...")
+        pass
+
     @abstractmethod
     def query(self):
         # main query for search request
@@ -30,15 +34,25 @@ class WaitroseRequest(GrocerySearchRequest):
     """Does a post request to the waitrose search api and stores the response
     Needs to be modified to handle item lists > 128 per page"""
 
+    MAX_REQUEST_SIZE = 128
+
     def __init__(self, search_term: str, max_items: int = 5000):
+        super().__init__()  # basically just for debugging at the moment
+
         self.search_term = search_term
         self.max_items = max_items
+
         self.multi_query()
+
         # self.query(search_term=search_term)
 
     def query(
         self, search_term: str, start: int, size: int = WAITROSE_MAX_REQUEST_SIZE
     ) -> "httpresponse":
+
+        print(
+            f"Sending request to waitrose.com for '{search_term}', start={start}, size={size}"
+        )  # for debugging
 
         url = "https://www.waitrose.com/api/content-prod/v2/cms/publish/productcontent/search/-1"
 
@@ -76,7 +90,6 @@ class WaitroseRequest(GrocerySearchRequest):
 
         # if max_requested items is less or eq to default page size
         if self.max_items <= WAITROSE_MAX_REQUEST_SIZE:
-            print("in here")
             self.response_list.append(
                 self.query(
                     search_term=self.search_term,
@@ -90,7 +103,6 @@ class WaitroseRequest(GrocerySearchRequest):
         for i in range(
             min(self.get_total_items(), self.max_items) // WAITROSE_MAX_REQUEST_SIZE + 1
         ):
-            print("in other here")
             self.response_list.append(
                 self.query(
                     search_term=self.search_term,
@@ -102,10 +114,11 @@ class WaitroseRequest(GrocerySearchRequest):
 
     def get_items_as_list(self) -> list:
         res = []
-        print(f"length of response_list={len(self.response_list)}")
         for response in self.response_list:
             res += response.json()["componentsAndProducts"]
-            print(len(response.json()["componentsAndProducts"]))
+        print(
+            f"Successfully retrieved {len(res)} items. You requested a maximum of {self.max_items} (default:5000)"
+        )
         return res
 
 
@@ -296,7 +309,7 @@ def open_pickle(fpath):
     return data
 
 
-def run_and_pickle_request(search_term, max_items=10):
+def run_and_pickle_request(search_term, max_items=20):
     # a test to run a search request on multiple supermarkets and store the result in a pickle
     # idea being to not spam servers or to store a test dataset.
 
