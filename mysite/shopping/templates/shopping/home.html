@@ -2,43 +2,53 @@
 
 {% block body %}
 
-<body>
-    <main>
+<main>
+    <div id="nav">
+        <div class="site-name">DigitalPantry</div>
+    </div>
+    <div id="content" class="fancy-scrollbar">
 
-        <div id="main-wrapper">
-            <div class="search-form">
-                <form id="form" method="post">
-                    {% csrf_token %}
-                    <input type="search" name="query" placeholder="Search...">
-                    <button>Search</button>
-                </form>
-            </div>
+        <div id="search">
+            <div class="generic-container-dark">
+                <div id="search-form">
 
-            {% if item_list %}
-            <div class="results-container fancy-scrollbar">
-                {% for item in item_list %}
-                <div class="result">
-                    <div class="thumbnail">
-                        <img src="{{item.thumbnail}}">
-                    </div>
-                    <div class="product-details-container">
-                        <div class="product-desc">
-                            <div>{{ item.description }}</div>
-                        </div>
-                        <div class="product-details-metadata-container">
-                            <div>{{item.price}}</div>
-                            <div>{{item.quantity}}</div>
-                            <div>{{item.unit_price}}</div>
-                        </div>
-                    </div>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="search" name="query" placeholder="Search...">
+                        <button type="submit">Search</button>
+                    </form>
+
                 </div>
-                {% endfor %}
             </div>
-            {% endif %}
         </div>
 
 
-    </main>
-</body>
+        <div id="search">
+            <div class="generic-container-dark">
+                <div id="search-form">
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="search" name="query" placeholder="Search...">
+                        <button type="submit">Search</button>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="generic-container-dark">aaaa</div>
+        </div>
+
+        <div class="search-result">
+            <div class="test">
+                <div class="generic-container-light">column1</div>
+                <div class="generic-container-light">column2</div>
+                <div class="generic-container-light">column3</div>
+            </div>
+        </div>
+    </div>
+</main>
 
 {% endblock %}

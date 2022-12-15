@@ -590,7 +590,13 @@ class QuantityFilter(AttributeFilter):
 
 
 class ItemListFilter:
-    def __init__(self, sorter: AttributeSorter, filters: list[AttributeFilter] = []):
+    def __init__(
+        self,
+        initial_list=list[Item],
+        sorter: AttributeSorter = None,
+        filters: list[AttributeFilter] = [],
+    ):
+        self.initial_list = initial_list
         self.sorter = sorter
         self.filters = filters
 
@@ -606,6 +612,10 @@ class ItemListFilter:
             new_item_list = self.sorter.get_sorted_list(item_list)
 
         return new_item_list
+
+    def run(self) -> list[Item]:
+        self.filtered_list = self.get_new_list(self.initial_list)
+        return self.filtered_list
 
 
 if __name__ == "__main__":

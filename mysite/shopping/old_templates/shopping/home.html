@@ -1,0 +1,44 @@
+{% extends "shopping/base.html" %}
+
+{% block body %}
+
+<body>
+    <main>
+
+        <div id="main-wrapper">
+            <div class="search-form">
+                <form id="form" method="post">
+                    {% csrf_token %}
+                    <input type="search" name="query" placeholder="Search...">
+                    <button>Search</button>
+                </form>
+            </div>
+
+            {% if item_list %}
+            <div class="results-container fancy-scrollbar">
+                {% for item in item_list %}
+                <div class="result">
+                    <div class="thumbnail">
+                        <img src="{{item.thumbnail}}">
+                    </div>
+                    <div class="product-details-container">
+                        <div class="product-desc">
+                            <div>{{ item.description }}</div>
+                        </div>
+                        <div class="product-details-metadata-container">
+                            <div>{{item.price}}</div>
+                            <div>{{item.quantity}}</div>
+                            <div>{{item.unit_price}}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+
+    </main>
+</body>
+
+{% endblock %}
