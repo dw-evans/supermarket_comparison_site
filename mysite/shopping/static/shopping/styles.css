@@ -74,7 +74,6 @@ main {
 }
 
 #nav>.site-name {
-
     font-size: x-large;
     margin-top: auto;
     margin-bottom: auto;
@@ -84,6 +83,15 @@ main {
 #content {
     display: flex;
     flex-direction: column;
+}
+
+.generic-container-transp {
+    border-radius: 0.5rem;
+    margin: 1rem;
+    padding: 0.5rem;
+    /*  */
+    /* background-color: var(--theme-dark); */
+    /*  */
 }
 
 .generic-container-dark {
@@ -114,10 +122,7 @@ main {
 }
 
 
-#search-form {
-    /* margin: 1rem; */
-    /* padding: 0.5rem; */
-}
+/* #search-form {} */
 
 #search-form * {
     font-size: large;
@@ -130,14 +135,8 @@ main {
     background-color: var(--theme-light);
 }
 
-#search-form>form>input::hover {
-    background-color: var(--theme-light-highlight)
-}
-
-
 #search-form>form>button {
     background-color: var(--theme-light);
-
     margin-left: 1rem;
 }
 
@@ -160,7 +159,85 @@ main {
     background: rgba(255, 255, 255, 0.15);
 }
 
+/* search result */
+
 .search-result {
     display: flex;
+}
+
+.search-result>.result-container {
+    display: flex;
     flex-direction: row;
+}
+
+.result-container>.item-list-container {
+    display: flex;
+    flex-direction: row;
+}
+
+/* item container (todo) */
+
+.item-container {
+    display: flex;
+}
+
+/* filter container */
+
+.filter-form * {
+    text-align: center;
+}
+
+.filter-form .grid-wrapper {
+    display: grid;
+    grid-template-columns: 10rem 5rem 5rem 10rem 10rem 5rem 5rem 10rem;
+}
+
+.filter-form .grid-wrapper>div {
+    margin: 0.2rem;
+    align-items: center;
+}
+
+.filter-form input {
+    /* font-size: large; */
+    border-width: 0px;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+}
+
+
+.filter-form .float-input-short {
+    width: 5rem
+}
+
+.filter-form>.form-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+
+.filter-form>.form-wrapper>.grid-wrapper-container {
+    display: flex
+}
+
+.filter-form input {
+    border-width: 0px;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    background-color: var(--theme-medium);
+}
+
+
+.filter-form button {
+    display: flex;
+    font-size: large;
+    border-width: 0px;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background-color: var(--theme-light);
+    margin-left: 1rem;
+    /* width: 30rem; */
+}
+
+.filter-form button:hover {
+    background-color: var(--theme-light-highlight);
 }

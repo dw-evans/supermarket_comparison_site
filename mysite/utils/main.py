@@ -599,21 +599,26 @@ class ItemListFilter:
         self.initial_list = initial_list
         self.sorter = sorter
         self.filters = filters
+        self.sorted_list = self.initial_list.copy()
 
     def get_new_list(self, item_list: list[Item]) -> list[Item]:
         # return self.sorter.get_sorted_list(item_list)
 
         new_item_list = item_list.copy()
-        if self.filters:
-            for filter_i in self.filters:
-                new_item_list = filter_i.get_filtered_list(new_item_list)
 
         if self.sorter:
             new_item_list = self.sorter.get_sorted_list(item_list)
 
+        self.sorted_list = new_item_list.copy()
+
+        if self.filters:
+            for filter_i in self.filters:
+                new_item_list = filter_i.get_filtered_list(new_item_list)
+
         return new_item_list
 
     def run(self) -> list[Item]:
+        # consider changing run to operate on the sorted list, not the initial list
         self.filtered_list = self.get_new_list(self.initial_list)
         return self.filtered_list
 

@@ -12,25 +12,27 @@ def home(request):
         print(request.headers)
         print(request.POST)
 
-        query = request.POST["query"]
+        if "query" in request.POST:
 
-        items = item_list = [
-            WaitroseItem(item)
-            for item in WaitroseRequest(query, max_items=10).get_items_as_list()
-        ]
+            query = request.POST["query"]
 
-        items = [item for item in items if not item.is_null]
+            items = item_list = [
+                WaitroseItem(item)
+                for item in WaitroseRequest(query, max_items=10).get_items_as_list()
+            ]
 
-        context = {
-            "search_term": query,
-            "item_list": items,
-        }
+            items = [item for item in items if not item.is_null]
 
-        return render(
-            request=request,
-            template_name="shopping/home.html",
-            context=context,
-        )
+            context = {
+                "search_term": query,
+                "item_list": items,
+            }
+
+            return render(
+                request=request,
+                template_name="shopping/home.html",
+                context=context,
+            )
 
     else:
 
