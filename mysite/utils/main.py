@@ -198,6 +198,10 @@ class UnitPrice:
 
     @classmethod
     def calculate(cls, price: Price, quantity=Quantity):
+
+        if quantity.amount == 0:
+            return price
+
         si_quantity = quantity.to_si()
 
         return cls(
@@ -373,20 +377,22 @@ class AsdaItem(Item):
 # Filtering things
 
 
-class PriceSorterEnum(Enum):
+class SorterEnum(Enum):
     """stores price sorting types"""
 
-    HIGHEST_PRICE = auto()
-    LOWEST_PRICE = auto()
-    HIGHEST_UNIT_PRICE = auto()
-    LOWEST_UNIT_PRICE = auto()
+    HIGHEST_PRICE = "highest_price"
+    LOWEST_PRICE = "lowest_price"
+    HIGHEST_UNIT_PRICE = "highest_unit_price"
+    LOWEST_UNIT_PRICE = "lowest_unit_price"
+    HIGHEST_QUANTITY = "highest_quantity"
+    LOWEST_QUANTITY = "lowest-quantity"
 
 
-class QuantitySorterEnum(Enum):
-    """stores quantity sorting types"""
+# class QuantitySorterEnum(Enum):
+#     """stores quantity sorting types"""
 
-    HIGHEST = auto()
-    LOWEST = auto()
+#     HIGHEST = 'highest_quantity'
+#     LOWEST = 'lowest-quantity'
 
 
 class AttributeSorter(ABC):
@@ -414,7 +420,7 @@ class AttributeSorter(ABC):
 class PriceSorter(AttributeSorter):
     """price sorter class"""
 
-    def __init__(self, sorter_enum: PriceSorterEnum) -> None:
+    def __init__(self, sorter_enum: SorterEnum) -> None:
         self.sorter_type = sorter_enum
 
     # these two functions are a bit shit
@@ -426,35 +432,9 @@ class PriceSorter(AttributeSorter):
     @staticmethod
     def _item_unit_price_amount(item: Item):
         # returns the item unit price
+        if item.quantity.amount == 0:
+            return item.price.amount
         return item.unit_price.price.amount
-
-    def get_sorted_list(self, item_list: list[Item]) -> list[Item]:
-        """sorter function, returns a sorted list of items per the requested filter(sorter) type"""
-        sorter_enum = self.sorter_type
-        if sorter_enum == PriceSorterEnum.HIGHEST_PRICE:
-            print("sorting by highest price")
-            return super().sorter(item_list, self._item_price_amount, reverse=True)
-        elif sorter_enum == PriceSorterEnum.LOWEST_PRICE:
-            print("sortin by lowest price")
-            return super().sorter(item_list, self._item_price_amount, reverse=False)
-        elif sorter_enum == PriceSorterEnum.HIGHEST_UNIT_PRICE:
-            print("sorting by highest unit price")
-            return super().sorter(item_list, self._item_unit_price_amount, reverse=True)
-        elif sorter_enum == PriceSorterEnum.LOWEST_UNIT_PRICE:
-            print("sorting by lowest unit price")
-            return super().sorter(
-                item_list, self._item_unit_price_amount, reverse=False
-            )
-        else:
-            print(
-                f"no compatible type of type:{sorter_enum} found, returning original list"
-            )
-            return item_list
-
-
-class QuantitySorter(AttributeSorter):
-    def __init__(self, sorter_enum: PriceSorterEnum) -> None:
-        self.sorter_type = sorter_enum
 
     @staticmethod
     def _item_quantity_amount_in_si(item: Item):
@@ -465,11 +445,28 @@ class QuantitySorter(AttributeSorter):
         return item.quantity.unit.unit_type.value
 
     def get_sorted_list(self, item_list: list[Item]) -> list[Item]:
-        """returns a sorted list, first by a default sort by unit type then by quantity amount in si units of course"""
-        new_item_list = item_list.copy()
+        """sorter function, returns a sorted list of items per the requested filter(sorter) type"""
         sorter_enum = self.sorter_type
-        if sorter_enum == QuantitySorterEnum.HIGHEST:
 
+        # Price sorting
+        if sorter_enum == SorterEnum.HIGHEST_PRICE:
+            print("sorting by highest price")
+            return super().sorter(item_list, self._item_price_amount, reverse=True)
+        elif sorter_enum == SorterEnum.LOWEST_PRICE:
+            print("sortin by lowest price")
+            return super().sorter(item_list, self._item_price_amount, reverse=False)
+        #  Unit price sorting
+
+        elif sorter_enum == SorterEnum.HIGHEST_UNIT_PRICE:
+            print("sorting by highest unit price")
+            return super().sorter(item_list, self._item_unit_price_amount, reverse=True)
+        elif sorter_enum == SorterEnum.LOWEST_UNIT_PRICE:
+            print("sorting by lowest unit price")
+            return super().sorter(
+                item_list, self._item_unit_price_amount, reverse=False
+            )
+        # Quantity sorting
+        elif sorter_enum == SorterEnum.HIGHEST_QUANTITY:
             print("sorting by unit_type then highest quantity")
             new_item_list = super().sorter(
                 new_item_list, self._item_unit_type, reverse=False
@@ -478,7 +475,7 @@ class QuantitySorter(AttributeSorter):
                 new_item_list, self._item_quantity_amount_in_si, reverse=True
             )
             return new_item_list
-        elif sorter_enum == QuantitySorterEnum.LOWEST:
+        elif sorter_enum == SorterEnum.LOWEST_QUANTITY:
             print("sorting by unit_type then lowest quantity")
             new_item_list = super().sorter(
                 new_item_list, self._item_unit_type, reverse=False
@@ -488,7 +485,41 @@ class QuantitySorter(AttributeSorter):
             )
             return new_item_list
 
-        pass
+        else:
+            print(
+                f"no compatible type of type:{sorter_enum} found, returning original list"
+            )
+            return item_list
+
+
+# class QuantitySorter(AttributeSorter):
+#     def __init__(self, sorter_enum: SorterEnum) -> None:
+#         self.sorter_type = sorter_enum
+
+#     def get_sorted_list(self, item_list: list[Item]) -> list[Item]:
+#         """returns a sorted list, first by a default sort by unit type then by quantity amount in si units of course"""
+#         new_item_list = item_list.copy()
+#         sorter_enum = self.sorter_type
+#         if sorter_enum == SorterEnum.HIGHEST_QUANTITY:
+#             print("sorting by unit_type then highest quantity")
+#             new_item_list = super().sorter(
+#                 new_item_list, self._item_unit_type, reverse=False
+#             )
+#             new_item_list = super().sorter(
+#                 new_item_list, self._item_quantity_amount_in_si, reverse=True
+#             )
+#             return new_item_list
+#         elif sorter_enum == SorterEnum.LOWEST_QUANTITY:
+#             print("sorting by unit_type then lowest quantity")
+#             new_item_list = super().sorter(
+#                 new_item_list, self._item_unit_type, reverse=False
+#             )
+#             new_item_list = super().sorter(
+#                 new_item_list, self._item_quantity_amount_in_si, reverse=False
+#             )
+#             return new_item_list
+
+#         pass
 
 
 class AttributeFilter(ABC):

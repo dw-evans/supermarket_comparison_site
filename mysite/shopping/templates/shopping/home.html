@@ -11,7 +11,6 @@
         <div id="search">
             <div class="generic-container-dark">
                 <div id="search-form">
-
                     <form method="post">
                         {% csrf_token %}
                         <input type="search" name="query" placeholder="Search...">
@@ -26,7 +25,7 @@
             <div class="filter-container generic-container-dark">
                 <div class="generic-container-medium">
                     <div class="filter-form">
-                        <form method="post">
+                        <form method="post" name="filters">
                             {% csrf_token %}
                             <div class="form-wrapper">
                                 <div class="grid-wrapper-container">
@@ -41,10 +40,10 @@
                                         <div>weight/volume/other</div>
                                         <div class="generic-container-transp">Price</div>
                                         <div class="generic-container-transp">
-                                            <input type="radio" value="sort_price_high" name="sort">
+                                            <input type="radio" value="" name="sort">
                                         </div>
                                         <div class="generic-container-transp">
-                                            <input type="radio" value="sort_price_low" name="sort">
+                                            <input type="radio" value="" name="sort">
                                         </div>
                                         <div class="generic-container-transp">
                                             <input class="float-input-short" type="number" id="quantity"
@@ -66,10 +65,10 @@
 
                                         <div class="generic-container-transp">Unit Price</div>
                                         <div class="generic-container-transp">
-                                            <input type="radio" value="sort_price_high" name="sort">
+                                            <input type="radio" value="" name="sort">
                                         </div>
                                         <div class="generic-container-transp">
-                                            <input type="radio" value="sort_price_low" name="sort">
+                                            <input type="radio" value="" name="sort">
                                         </div>
                                         <div class="generic-container-transp">
                                             <input class="float-input-short" type="number" id="quantity"
@@ -80,21 +79,20 @@
                                                 name="unit_price_filter_high">
                                         </div>
                                         <div class="generic-container-transp">
-                                            <input type="radio" value="unit_price_filter_on" name="group_unit_price">
+                                            <input type="radio" value="" name="group_unit_price">
                                         </div>
                                         <div class="generic-container-transp">
-                                            <input type="radio" value="unit_price_filter_off" name="group_unit_price"
-                                                checked="checked">
+                                            <input type="radio" value="" name="group_unit_price" checked="checked">
                                         </div>
                                         <div></div>
 
 
                                         <div class="generic-container-transp">Quantity</div>
                                         <div class="generic-container-transp">
-                                            <input type="radio" value="sort_price_high" name="sort">
+                                            <input type="radio" value="" name="sort">
                                         </div>
                                         <div class="generic-container-transp">
-                                            <input type="radio" value="sort_price_low" name="sort">
+                                            <input type="radio" value="" name="sort">
                                         </div>
                                         <div class="generic-container-transp">
                                             <input class="float-input-short" type="number" id="quantity"
@@ -122,7 +120,7 @@
                                     </div>
                                 </div>
                                 <div class="generic-container-transp">
-                                    <button type="submit">Filter</button>
+                                    <button type="submit" name="filters">Filter</button>
                                 </div>
 
                         </form>

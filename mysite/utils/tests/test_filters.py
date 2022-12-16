@@ -9,7 +9,7 @@ WAITROSE_PKL = open_pickle(path2)
 
 class TestPriceSorters:
     def test_highest_price(self):
-        sorter_enum = PriceSorterEnum.HIGHEST_PRICE
+        sorter_enum = SorterEnum.HIGHEST_PRICE
         reverse = True
 
         WAITROSE_PKL = open_those_pickles()
@@ -35,7 +35,7 @@ class TestPriceSorters:
         assert sorted_result == res0
 
     def test_lowest_price(self):
-        sorter_enum = PriceSorterEnum.LOWEST_PRICE
+        sorter_enum = SorterEnum.LOWEST_PRICE
         reverse = False
 
         WAITROSE_PKL = open_those_pickles()
@@ -61,7 +61,7 @@ class TestPriceSorters:
         assert sorted_result == res0
 
     def test_highest_unit_price(self):
-        sorter_enum = PriceSorterEnum.HIGHEST_UNIT_PRICE
+        sorter_enum = SorterEnum.HIGHEST_UNIT_PRICE
         reverse = True
 
         WAITROSE_PKL = open_those_pickles()
@@ -87,7 +87,7 @@ class TestPriceSorters:
         assert sorted_result == res0
 
     def test_lowest_unit_price(self):
-        sorter_enum = PriceSorterEnum.LOWEST_UNIT_PRICE
+        sorter_enum = SorterEnum.LOWEST_UNIT_PRICE
         reverse = False
 
         WAITROSE_PKL = open_those_pickles()
