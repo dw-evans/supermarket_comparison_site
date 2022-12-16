@@ -246,6 +246,7 @@ main {
 .filter-form .grid-wrapper {
     display: grid;
     grid-template-columns: 10rem 5rem 5rem 10rem 10rem 5rem 5rem 10rem;
+    /* align-items: left; */
 }
 
 .filter-form .grid-wrapper>div {
@@ -265,14 +266,14 @@ main {
     width: 5rem
 }
 
-.filter-form>.form-wrapper {
+.form-wrapper {
     display: flex;
     flex-direction: column;
 }
 
 
-.filter-form>.form-wrapper>.grid-wrapper-container {
-    display: flex
+.grid-wrapper-container {
+    display: flex;
 }
 
 .filter-form input {

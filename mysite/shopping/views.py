@@ -54,6 +54,8 @@ def home(request):
         if "price_filter_low" in request.POST:
             print("filtersyep")
 
+            # Todo add enums for all filter cases jesus
+
             filter = ItemListFilter(
                 initial_list=items,
                 sorter=PriceSorter(SorterEnum.LOWEST_PRICE),
