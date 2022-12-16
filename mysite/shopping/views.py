@@ -18,7 +18,7 @@ def home(request):
 
             items = item_list = [
                 WaitroseItem(item)
-                for item in WaitroseRequest(query, max_items=10).get_items_as_list()
+                for item in WaitroseRequest(query, max_items=20).get_items_as_list()
             ]
 
             items = [item for item in items if not item.is_null]

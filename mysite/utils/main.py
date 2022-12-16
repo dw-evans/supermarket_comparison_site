@@ -599,7 +599,7 @@ class ItemListFilter:
         self.initial_list = initial_list
         self.sorter = sorter
         self.filters = filters
-        self.sorted_list = self.initial_list.copy()
+        # self.sorted_list = initial_list.copy()
 
     def get_new_list(self, item_list: list[Item]) -> list[Item]:
         # return self.sorter.get_sorted_list(item_list)
