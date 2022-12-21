@@ -58,7 +58,7 @@ def home(request):
 
             filter = ItemListFilter(
                 initial_list=items,
-                sorter=PriceSorter(SorterEnum.LOWEST_PRICE),
+                sorter=PriceSorter(SorterEnum.LOWEST_UNIT_PRICE),
                 filters=[],
             )
 
