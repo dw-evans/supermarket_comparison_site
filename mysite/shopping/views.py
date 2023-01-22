@@ -2,36 +2,59 @@ from django.shortcuts import render
 
 from utils.query import run_and_pickle_request, open_those_pickles
 from utils.query import WaitroseRequest, AsdaRequest
-from utils.main import WaitroseItem
+from utils.main import Item, WaitroseItem
 
 from utils.main import ItemListFilter, SorterEnum
 from utils.main import QuantityFilter
 from utils.main import PriceFilter, PriceSorter
 
-global items
-items = []
+from dataclasses import dataclass
+
+# query = ""
+# items = []
+# cart_items = []
+
+from django.urls import reverse
+from django.http import HttpResponse, HttpResponseRedirect
+
+
+@dataclass
+class Session:
+    query: str
+    items: list[Item]
+    cart_items: list[Item]
+
+
+s = Session(query="", items=[], cart_items=[])
+
+
+def query(request, query_string):
+
+    return HttpResponse(f"query={query_string}")
 
 
 def home(request):
-    global items
+
     print(request)
 
     if request.method == "POST":
 
-        print(request.headers)
-        print(request.POST)
+        # print(request.headers)
+        # print(request.POST)
 
+        # handle a search query
         if "query" in request.POST:
 
-            query = request.POST["query"]
+            s.query = request.POST["query"]
 
             items = [
                 WaitroseItem(item)
-                for item in WaitroseRequest(query, max_items=20).get_items_as_list()
+                for item in WaitroseRequest(s.query, max_items=20).get_items_as_list()
             ]
 
             items = [item for item in items if not item.is_null]
 
+            # default to sorting by highest price
             filter = ItemListFilter(
                 initial_list=items,
                 sorter=PriceSorter(SorterEnum.HIGHEST_PRICE),
@@ -39,18 +62,9 @@ def home(request):
             )
 
             items = filter.get_new_list(items)
+            s.items = items
 
-            context = {
-                "search_term": query,
-                "item_list": items,
-            }
-
-            return render(
-                request=request,
-                template_name="shopping/home.html",
-                context=context,
-            )
-
+        # handle a filter form need to improve
         if "price_filter_low" in request.POST:
             print("filtersyep")
 
@@ -69,40 +83,61 @@ def home(request):
                 "item_list": items,
             }
 
-            return render(
-                request=request,
-                template_name="shopping/home.html",
-                context=context,
-            )
-
     else:
+        pass
 
-        context = {
-            "search_term": "no search yet bro",
-        }
+    context = {
+        "search_term": s.query,
+        "item_list": s.items,
+        "cart_item_list": s.cart_items,
+    }
 
-        return render(
-            request=request,
-            template_name="shopping/home.html",
-            context=context,
-        )
+    return render(
+        request=request,
+        template_name="shopping/home.html",
+        context=context,
+    )
 
 
-# def search(request, search_string):
+def add_to_cart(request, item_identifier):
 
-#     # search_string = request.GET["query"]
+    # make sure to get the uuid as a string
+    filter_result = list(
+        filter(lambda x: str(x.identifier) == item_identifier, s.items)
+    )
 
-#     item_list = [
-#         WaitroseItem(item)
-#         for item in WaitroseRequest(search_string, max_items=10).get_items_as_list()
-#     ]
+    print(f"len(filter_result)={len(filter_result)}")
+    if len(filter_result) == 1:
 
-#     context = {
-#         "search_term": search_string,
-#         "item_list": [item for item in item_list if not item.is_null],
-#         # "null_item_list": [item for item in item_list if item.is_null],
-#     }
+        item = filter_result[0]
 
-#     return render(
-#         request=request, template_name="shopping/search.html", context=context
-#     )
+        # crudely ignore doubling adds to cart
+        if item not in s.cart_items:
+            print(f"adding id={item_identifier} to cart")
+            s.cart_items.append(item)
+        else:
+            s.cart_items.append(item)
+            pass
+            # res: CartItem = next((i for i in s.cart_items == item), None)
+            # res.pieces += 1
+            # print(res.pieces)
+
+    return HttpResponseRedirect(reverse("shopping:home"))
+
+
+def remove_from_cart(request, item_identifier):
+
+    # make sure to get the uuid as a string
+    filter_result = list(
+        filter(lambda x: str(x.identifier) == item_identifier, s.cart_items)
+    )
+
+    if len(filter_result) > 0:
+
+        item = filter_result[0]
+
+        # crudely ignore doubling adds to cart
+        if item in s.cart_items:
+            s.cart_items.remove(item)
+
+    return HttpResponseRedirect(reverse("shopping:home"))

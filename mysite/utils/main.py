@@ -213,6 +213,9 @@ class UnitPrice:
         )
 
 
+import uuid
+
+
 @dataclass
 class Item(ABC):
     # generic item class for uniform access to variables.
@@ -222,6 +225,9 @@ class Item(ABC):
     quantity: Quantity
     thumbnail: str = field(repr=False)
     is_null: bool
+
+    def __post_init__(self):
+        self.identifier = uuid.uuid4()
 
     def get_price(self):
         return self.price
@@ -266,6 +272,8 @@ class WaitroseItem(Item):
         self.price = self.fetch_price()
         self.quantity = self.fetch_quanity()
         self.thumbnail = self.fetch_thumbnail()
+
+        super().__post_init__()
 
     @staticmethod
     def get_quantity_from_string(string: str) -> Quantity:
