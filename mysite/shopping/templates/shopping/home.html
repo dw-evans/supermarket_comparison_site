@@ -13,10 +13,9 @@
                 <div id="search-form">
                     <form method="post">
                         {% csrf_token %}
-                        <input type="search" name="query" placeholder="Search...">
+                        <input type="search" name="query" placeholder="{{ search_term }}">
                         <button type="submit">Search</button>
                     </form>
-
                 </div>
 
             </div>
@@ -25,6 +24,20 @@
         <div class="filters">
             <div class="filter-container generic-container-dark">
                 <div class="generic-container-medium">
+                    <form action="" method="post">
+                        {% csrf_token %}
+                        <button name="sort_by" value="lowest_price">Lowest Price</button>
+                        <button name="sort_by" value="highest_price">Highest Price</button>
+                        <button name="sort_by" value="lowest_unit_price">Lowest Unit Price</button>
+                        <button name="sort_by" value="highest_unit_price">Highest Unit Price</button>
+                        <button name="sort_by" value="lowest_quantity">Lowest Quantity</button>
+                        <button name="sort_by" value="highest_quantity">Highest Quantity</button>
+                        <button name="filter_by" value="weight">UnitType.Weight</button>
+                        <button name="filter_by" value="volume">UnitType.Volume</button>
+                        <button name="filter_by" value="other">UnitType.Other</button>
+                        <button name="clear_filters" value="other">Clear filters</button>
+
+                    </form>
                     <div class="filter-form">
                         <!-- <form method="post" name="filters">
                             {% csrf_token %}
@@ -133,78 +146,91 @@
             </div>
         </div>
 
-
-        <div class="search-result">
-            {% if item_list %}
-            <div class="result-container">
-                <div class="generic-container-dark">
-                    <div class="item-list-container generic-container-dark fancy-scrollbar">
-                        {% for item in item_list %}
-                        <div class="item-container generic-container-light">
-                            <div class="product-details-container">
-                                <div class="thumbnail generic-container-medium">
-                                    <img src="{{item.thumbnail}}" alt="">
-                                </div>
-                                <div class=".product-desc generic-container-medium">
-                                    {{ item.description }}
-                                </div>
-                                <div class="generic-container-medium product-details-metadata-container">
-                                    <div class="generic-container-light">{{item.price}}</div>
-                                    <div class="generic-container-light">{{item.quantity}}</div>
-                                    <div class="generic-container-light">{{item.unit_price}}</div>
-                                    <div class="generic-container-light">
-                                        <form action="{% url 'shopping:add_to_cart' item.identifier %}" method="post">
-                                            {% csrf_token %}
-                                            <input type="Submit" value="Add to cart">
-                                        </form>
+        <div class="generic-container-medium">
+            <div class="search-result">
+                {% if item_list %}
+                <div class="result-container">
+                    <div class="generic-container-dark">
+                        <div class="item-list-container generic-container-dark fancy-scrollbar">
+                            {% for item in item_list %}
+                            <div class="item-container generic-container-light">
+                                <div class="product-details-container">
+                                    <div class="thumbnail generic-container-medium">
+                                        <img src="{{item.thumbnail}}" alt="">
+                                    </div>
+                                    <div class=".product-desc generic-container-medium">
+                                        {{ item.description }}
+                                    </div>
+                                    <div class="generic-container-medium product-details-metadata-container">
+                                        <div class="generic-container-light">{{item.price}} ({{item.price.to_nzd}})
+                                        </div>
+                                        <div class="generic-container-light">
+                                            {{item.quantity}}</div>
+                                        <div class="generic-container-light">{{item.unit_price}}
+                                            ({{ item.unit_price.to_nzd }}) </div>
+                                        <div class="generic-container-light">
+                                            <form action="{% url 'shopping:add_to_cart' item.identifier %}"
+                                                method="post">
+                                                {% csrf_token %}
+                                                <input type="Submit" value="Add to cart">
+                                            </form>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
                     </div>
                 </div>
+                {% endif %}
             </div>
-            {% endif %}
-        </div>
 
-        <div class="search-result">
-            {% if item_list %}
-            {% if cart_item_list %}
-            <div class="result-container">
-                <div class="generic-container-dark">
-                    <div class="item-list-container generic-container-dark fancy-scrollbar">
-                        {% for item in cart_item_list %}
-                        <div class="item-container generic-container-light">
-                            <div class="product-details-container">
-                                <div class="thumbnail generic-container-medium">
-                                    <img src="{{item.thumbnail}}" alt="">
-                                </div>
-                                <div class=".product-desc generic-container-medium">
-                                    {{item.description }}
-                                </div>
-                                <div class="generic-container-medium product-details-metadata-container">
-                                    <div class="generic-container-light">{{item.price}}</div>
-                                    <div class="generic-container-light">{{item.quantity}}</div>
-                                    <div class="generic-container-light">{{item.unit_price}}</div>
-                                    <div class="generic-container-light">
-                                        <form action="{% url 'shopping:remove_from_cart' item.identifier %}"
-                                            method="post">
-                                            {% csrf_token %}
-                                            {% url 'shopping:remove_from_cart' item.identifier %}
-                                            <input type="Submit" value="Remove from cart">
-                                        </form>
+            <div class="search-result">
+                {% if item_list %}
+                {% if cart_item_list %}
+                <div class="result-container">
+                    <div class="generic-container-dark">
+                        <div class="item-list-container generic-container-dark fancy-scrollbar">
+                            {% for cart_item in cart_item_list %}
+                            <div class="item-container generic-container-light">
+                                <div class="product-details-container">
+                                    <div class="thumbnail generic-container-medium">
+                                        <img src="{{cart_item.item.thumbnail}}" alt="">
                                     </div>
+                                    <div class=".product-desc generic-container-medium">
+                                        {{cart_item.item.description }}
+                                    </div>
+                                    <div class="generic-container-medium product-details-metadata-container">
+                                        <div class="generic-container-light">{{cart_item.item.price}}</div>
+                                        <div class="generic-container-light">{{cart_item.item.quantity}}</div>
+                                        <div class="generic-container-light">{{cart_item.item.unit_price}}</div>
+                                        <div class="generic-container-light">{{cart_item.pcs}}
+                                            ({{cart_item.total_value}})
+                                        </div>
+                                        <div class="generic-container-light">
+                                            <form
+                                                action="{% url 'shopping:remove_from_cart' cart_item.item.identifier %}"
+                                                method="post">
+                                                {% csrf_token %}
+                                                <input type="Submit" value="Remove from cart">
+                                            </form>
+                                            <form action="{% url 'shopping:add_to_cart' cart_item.item.identifier %}"
+                                                method="post">
+                                                {% csrf_token %}
+                                                <input type="Submit" value="Add to cart">
+                                            </form>
+                                        </div>
 
+                                    </div>
                                 </div>
                             </div>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
                     </div>
                 </div>
+                {% endif %}
+                {% endif %}
             </div>
-            {% endif %}
-            {% endif %}
         </div>
 
 
