@@ -38,115 +38,16 @@
                         <button name="clear_filters" value="other">Clear filters</button>
 
                     </form>
-                    <div class="filter-form">
-                        <!-- <form method="post" name="filters">
-                            {% csrf_token %}
-                            <div class="form-wrapper">
-                                <div class="grid-wrapper-container">
-                                    <div class="grid-wrapper generic-container-light">
-                                        <div></div>
-                                        <div>sort_high</div>
-                                        <div>sort_low</div>
-                                        <div>filter_low</div>
-                                        <div>filter_high</div>
-                                        <div>filter_on</div>
-                                        <div>filter_off</div>
-                                        <div>weight/volume/other</div>
-                                        <div class="generic-container-transp">Price</div>
-                                        <div class="generic-container-transp">
-                                            <input type="radio" value="" name="sort">
-                                        </div>
-                                        <div class="generic-container-transp">
-                                            <input type="radio" value="" name="sort">
-                                        </div>
-                                        <div class="generic-container-transp">
-                                            <input class="float-input-short" type="number" id="quantity"
-                                                name="price_filter_low">
-                                        </div>
-                                        <div class="generic-container-transp">
-                                            <input class="float-input-short" type="number" id="quantity"
-                                                name="price_filter_high">
-                                        </div>
-                                        <div class="generic-container-transp">
-                                            <input type="radio" value="price_filter_on" name="group_price">
-                                        </div>
-                                        <div class="generic-container-transp">
-                                            <input type="radio" value="price_filter_off" name="group_price"
-                                                checked="checked">
-                                        </div>
-                                        <div></div>
-
-
-                                        <div class="generic-container-transp">Unit Price</div>
-                                        <div class="generic-container-transp">
-                                            <input type="radio" value="" name="sort">
-                                        </div>
-                                        <div class="generic-container-transp">
-                                            <input type="radio" value="" name="sort">
-                                        </div>
-                                        <div class="generic-container-transp">
-                                            <input class="float-input-short" type="number" id="quantity"
-                                                name="unit_price_filter_low">
-                                        </div>
-                                        <div class="generic-container-transp">
-                                            <input class="float-input-short" type="number" id="quantity"
-                                                name="unit_price_filter_high">
-                                        </div>
-                                        <div class="generic-container-transp">
-                                            <input type="radio" value="" name="group_unit_price">
-                                        </div>
-                                        <div class="generic-container-transp">
-                                            <input type="radio" value="" name="group_unit_price" checked="checked">
-                                        </div>
-                                        <div></div>
-
-
-                                        <div class="generic-container-transp">Quantity</div>
-                                        <div class="generic-container-transp">
-                                            <input type="radio" value="" name="sort">
-                                        </div>
-                                        <div class="generic-container-transp">
-                                            <input type="radio" value="" name="sort">
-                                        </div>
-                                        <div class="generic-container-transp">
-                                            <input class="float-input-short" type="number" id="quantity"
-                                                name="quantity_filter_low">
-                                        </div>
-                                        <div class="generic-container-transp">
-                                            <input class="float-input-short" type="number" id="quantity"
-                                                name="quantity_filter_high">
-                                        </div>
-                                        <div class="generic-container-transp">
-                                            <input type="radio" value="quantity_filter_on" name="group_quantity">
-                                        </div>
-                                        <div class="generic-container-transp">
-                                            <input type="radio" value="quantity_filter_off" name="group_quantity"
-                                                checked="checked">
-                                        </div>
-                                        <div>
-                                            <input type="radio" value="unit_weight" name="group_units"
-                                                checked="checked">
-                                            <input type="radio" value="unit_volume" name="group_units"
-                                                checked="unchecked">
-                                            <input type="radio" value="unit_other" name="group_units"
-                                                checked="unchecked">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="generic-container-transp">
-                                    <button type="submit" name="filters">Filter</button>
-                                </div>
-
-                        </form> -->
-
-
-
-                    </div>
                 </div>
             </div>
         </div>
 
         <div class="generic-container-medium">
+            <div class="generic-container-dark">
+                <div class="generic-container-dark">
+                    <span style="font-size: x-large">Results from waitrose.com for "{{query}}"</span>
+                </div>
+            </div>
             <div class="search-result">
                 {% if item_list %}
                 <div class="result-container">
@@ -169,10 +70,10 @@
                                         <div class="generic-container-light">{{item.unit_price}}
                                             ({{ item.unit_price.to_nzd }}) </div>
                                         <div class="generic-container-light">
-                                            <form action="{% url 'shopping:add_to_cart' item.identifier %}"
-                                                method="post">
+                                            <form action="" method="post">
                                                 {% csrf_token %}
-                                                <input type="Submit" value="Add to cart">
+                                                <button name="add_to_cart" value="{{ item.identifier }}">Add to
+                                                    Cart</button>
                                             </form>
                                         </div>
                                     </div>
@@ -185,7 +86,14 @@
                 {% endif %}
             </div>
 
+            <div class="generic-container-dark">
+                <div class="generic-container-dark">
+                    <span style="font-size: x-large">Your waitrose.com Cart</span>
+                </div>
+            </div>
+
             <div class="search-result">
+
                 {% if item_list %}
                 {% if cart_item_list %}
                 <div class="result-container">
@@ -208,16 +116,16 @@
                                             ({{cart_item.total_value}})
                                         </div>
                                         <div class="generic-container-light">
-                                            <form
-                                                action="{% url 'shopping:remove_from_cart' cart_item.item.identifier %}"
-                                                method="post">
+                                            <form action="" method="post">
                                                 {% csrf_token %}
-                                                <input type="Submit" value="Remove from cart">
+                                                <button name="add_to_cart" value="{{ cart_item.item.identifier }}">Add
+                                                    to
+                                                    Cart</button>
                                             </form>
-                                            <form action="{% url 'shopping:add_to_cart' cart_item.item.identifier %}"
-                                                method="post">
+                                            <form action="" method="post">
                                                 {% csrf_token %}
-                                                <input type="Submit" value="Add to cart">
+                                                <button name="remove_from_cart"
+                                                    value="{{ cart_item.item.identifier }}">Remove</button>
                                             </form>
                                         </div>
 
@@ -228,10 +136,11 @@
                         </div>
                     </div>
                 </div>
-                {% endif %}
-                {% endif %}
             </div>
+            {% endif %}
+            {% endif %}
         </div>
+    </div>
 
 
     </div>
