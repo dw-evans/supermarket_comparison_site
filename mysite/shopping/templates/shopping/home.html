@@ -10,10 +10,10 @@
 
         <div id="search">
             <div class="generic-container-dark">
+
                 <div id="search-form">
-                    <form method="post">
-                        {% csrf_token %}
-                        <input type="search" name="query" placeholder="{{ search_term }}">
+                    <form method="get">
+                        <input type="search" name="q" placeholder="{{ search_term }}">
                         <button type="submit">Search</button>
                     </form>
                 </div>
@@ -94,8 +94,16 @@
 
             <div class="search-result">
 
-                {% if item_list %}
                 {% if cart_item_list %}
+
+                <div class="cart-container">
+                    <div class="cart details generic-container-dark">
+                        Cart Summary
+                        Cart Total: xx
+                        Items: xx
+                    </div>
+                </div>
+
                 <div class="result-container">
                     <div class="generic-container-dark">
                         <div class="item-list-container generic-container-dark fancy-scrollbar">
@@ -137,7 +145,6 @@
                     </div>
                 </div>
             </div>
-            {% endif %}
             {% endif %}
         </div>
     </div>

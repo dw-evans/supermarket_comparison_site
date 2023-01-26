@@ -20,7 +20,9 @@ from utils.main import SorterEnum
 from utils.main import SearchResult
 
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
+from utils.main import Store
 
 # query = ""
 # items = []
@@ -30,27 +32,13 @@ from django.urls import reverse
 from django.http import HttpResponse, HttpResponseRedirect
 
 
-# @dataclass
-class Session:
-    def __init__(self):
-        self.query: str = ""
-        self.max_items: int = 100
-        self.items: list[Item] = []
-        self.cart_items: list[CartItem] = []
-        self.search_result: SearchResult = SearchResult([])
+@dataclass
+class ShopSession:
+    shop_id: Store
 
-        self.unit_type_filter = Filter.UnitTypeFilter()
-
-        self.filter: ItemListFilter = ItemListFilter(
-            sorter=None,
-            filters=[self.unit_type_filter],
-        )
-
-    @dataclass
-    class FilterData:
-        # storage of the filter state...
-        # could just call the itemlistfilter
-        pass
+    query: str = ""
+    query_result: list[Item] = field(default_factory=list)
+    query_filter: ItemListFilter = ItemListFilter()
 
 
 @dataclass
@@ -63,8 +51,44 @@ class CartItem:
         return self.item.price * self.pcs
 
 
-def cart_total(cart_item_list: list[CartItem]):
-    return sum([cart_item.total_value for cart_item in cart_item_list])
+@dataclass
+class Cart:
+    items: list[CartItem] = field(default_factory=list)
+
+    @property
+    def total_value(self) -> Price:
+        return sum(i.total_value for i in self.items)
+
+
+# @dataclass
+class Session:
+    def __init__(self):
+        self.query: str = ""
+        self.max_items: int = 100
+        self.items: list[Item] = []
+
+        self.search_result: SearchResult = SearchResult([])
+        self.cart: Cart = Cart()
+
+        self.unit_type_filter = Filter.UnitTypeFilter()
+
+        self.filter: ItemListFilter = ItemListFilter()
+
+        # for f in self.filter.filters._filters_as_list():
+        #     if f.__name__ == "unit_type_filter":
+        #         f.enable()
+
+        self.filter.filters.unit_type_filter.enable()
+
+    @property
+    def cart_items(self):
+        return self.cart.items
+
+    @property
+    def item_list_displayed(self):
+        self.search_result.filter_and_sort(self.filter)
+        # slightly dodgey
+        return self.search_result._sorted_and_filtered_list
 
 
 # hacky price converter to display in templates
@@ -125,35 +149,13 @@ s = Session()
 
 def home(request):
 
-    if request.method == "POST":
-        print(request.POST)
-
-        if "add_to_cart" in request.POST:
-            add_item_to_cart_by_id(request.POST.get("add_to_cart"))
-
-        if "remove_from_cart" in request.POST:
-            remove_item_from_cart_by_id(request.POST.get("remove_from_cart"))
-
-        if "sort_by" in request.POST:
-            sort_by_val = request.POST.get("sort_by")
-            s.filter.sorter = Sorter(SorterEnum(sort_by_val))
-
-            print(s.filter.sorter.sorter_type)
-
-        if "filter_by" in request.POST:
-            filter_by_val = request.POST.get("filter_by")
-            print(f"UnitType(filter_by_val)={UnitType(filter_by_val)}")
-            s.unit_type_filter.toggle_unit_type_accept_list(UnitType(filter_by_val))
-            print(s.unit_type_filter.unit_type_accept_list)
-
-        if "clear_filters" in request.POST:
-            s.filter.clear_filters()
-
+    if request.method == "GET":
+        print(request.GET)
         # handle a search query
-        if "query" in request.POST:
+        if "q" in request.GET:
 
             # save the search query
-            s.query = request.POST["query"]
+            s.query = request.GET.get("q")
 
             # get the waitrose items
             items = [
@@ -166,14 +168,37 @@ def home(request):
 
             s.search_result = SearchResult(items)
 
+    if request.method == "POST":
+        print(request.POST)
+
+        if "add_to_cart" in request.POST:
+            add_item_to_cart_by_id(request.POST.get("add_to_cart"))
+
+        if "remove_from_cart" in request.POST:
+            remove_item_from_cart_by_id(request.POST.get("remove_from_cart"))
+
+        if "sort_by" in request.POST:
+            s.filter.sorter = Sorter(SorterEnum(request.POST.get("sort_by")))
+
+        if "filter_by" in request.POST:
+            filter_by_val = request.POST.get("filter_by")
+            # print(f"UnitType(filter_by_val)={UnitType(filter_by_val)}")
+            # s.unit_type_filter.toggle_unit_type_accept_list(UnitType(filter_by_val))
+
+            s.filter.filters.unit_type_filter.toggle_unit_type_accept_list(
+                UnitType(filter_by_val)
+            )
+            print(s.filter.filters.unit_type_filter.unit_type_accept_list)
+
+        if "clear_filters" in request.POST:
+            s.filter.clear_filters()
+
     else:
         pass
 
-    s.search_result.filter_and_sort(s.filter)
-
     context = {
         "query": s.query,
-        "item_list": s.search_result.sorted_and_filtered_list,
+        "item_list": s.item_list_displayed,
         "cart_item_list": s.cart_items,
     }
 

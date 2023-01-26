@@ -169,6 +169,19 @@ main {
     flex-direction: row;
 }
 
+/* .cart-container {
+    display: flex;
+} */
+
+.cart-container div {
+    display: flex;
+    flex-direction: column;
+}
+
+.cart-details {
+    width: clamp(20rem, 20rem)
+}
+
 
 .item-list-container {
     display: flex;

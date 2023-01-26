@@ -582,23 +582,35 @@ class Filter:
     class AttributeFilter(ABC):
         """generic attribute filter"""
 
+        def disable(self):
+            self.is_enabled = False
+
+        def enable(self):
+            self.is_enabled = True
+
+        def __post_init__(self):
+            self.disable()
+
+        def toggle_enable(self):
+            self.is_enabled = not self.is_enabled
+
         def get_filtered_list(self, item_list: list[Item]):
             return item_list
-            pass
 
     @dataclass
     class PriceFilter(AttributeFilter):
         # maybe we can do a filter by unit price one too... would need to be paired with a sorter first probably.
-        price_low: Price
-        price_high: Price
+        price_low: Price | UnitPrice
+        price_high: Price | UnitPrice
 
         def __post_init__(self):
-            if self.price_low is None:
-                self.price_low = Price(0.0)
-            if self.price_high is None:
-                self.price_high = Price(500.0)
+            # if self.price_low is None:
+            #     self.price_low = Price(0.0)
+            # if self.price_high is None:
+            #     self.price_high = Price(500.0)
             self.base_currency = self.price_low.curr
             self.price_high = self.price_high.convert_to(self.base_currency)
+            super().__post_init__()
 
         @staticmethod
         def _price_amount_is_between(item: Item, lower: Price, upper: Price) -> bool:
@@ -621,18 +633,51 @@ class Filter:
             )
 
     @dataclass
+    class UnitPriceFilter(PriceFilter):
+        # just assume that the units are matching
+
+        def __post_init__(self):
+            try:
+                if self.price_low.per_unit != self.price_high.per_unit:
+                    print("Warning, not matching units")
+            except:
+                print(
+                    f"Warning, prices not UnitPrices, price_low.type={type(self.price_low)}, price_low.type={type(self.price_low)}"
+                )
+            return super().__post_init__()
+
+    @dataclass
     class QuantityFilter(AttributeFilter):
-        # maybe we can do a filter by unit price one too... would need to be paired with a sorter first probably.
+        # be aware that this inherently is a unittypefilter
         qty_low: Quantity
         qty_high: Quantity
 
+        @dataclass
+        class Weight:
+            qty_low: Quantity
+            qty_high: Quantity
+            pass
+
+        @dataclass
+        class Volume:
+            qty_low: Quantity
+            qty_high: Quantity
+            pass
+
+        @dataclass
+        class Other:
+            qty_low: Quantity
+            qty_high: Quantity
+            pass
+
         def __post_init__(self):
-            if self.qty_low is None:
-                self.qty_low = Quantity(0, Unit.KG)
-            if self.qty_high is None:
-                self.qty_high = Quantity(20, Unit.KG)
+            # if self.qty_low is None:
+            #     self.qty_low = Quantity(0, Unit.KG)
+            # if self.qty_high is None:
+            #     self.qty_high = Quantity(20, Unit.KG)
             self.base_unit = self.qty_low.unit
             self.qty_high = self.qty_high.convert_to(self.base_unit)
+            super().__post_init__()
 
         @staticmethod
         def _quantity_amount_in_si_is_between(
@@ -650,6 +695,7 @@ class Filter:
 
         def get_filtered_list(self, item_list: list[Item]):
             new_item_list = item_list.copy()
+            # first filter out non compliant units
             new_item_list = list(
                 filter(
                     partial(
@@ -675,6 +721,9 @@ class Filter:
     class DescriptionFilter(AttributeFilter):
         description: str
 
+        def __post_init__(self):
+            return super().__post_init__()
+
         @staticmethod
         def _item_description_contains_str(item: Item, sub_string: str):
             return sub_string in item.description
@@ -693,6 +742,9 @@ class Filter:
     class UnitTypeFilter(AttributeFilter):
         unit_type_accept_list: list[UnitType] = field(default_factory=list)
 
+        def __post_init__(self):
+            return super().__post_init__()
+
         @staticmethod
         def _item_unit_accept(item: Item, unit_type_accept_list: list[UnitType]):
 
@@ -707,8 +759,8 @@ class Filter:
             return False
 
         def get_filtered_list(self, item_list: list[Item]):
-            if len(self.unit_type_accept_list) == 0:
-                return item_list
+            # if len(self.unit_type_accept_list) == 0:
+            #     return item_list
             return list(
                 filter(
                     partial(
@@ -766,26 +818,55 @@ class SearchResult:
     def __post_init__(self):
         # map the sorted lists to the intiial on pre-processing
         self.sorted_list = self.initial_list
-        self.sorted_and_filtered_list = self.initial_list
+        self._sorted_and_filtered_list = self.initial_list
 
     def filter_and_sort(self, item_list_filter: ItemListFilter):
         # returns a filter and sorted list, stores them in the object too.
+        # put here so we can store the sorted lists as well as the original
         self.sorted_list = item_list_filter._sort(self.sorted_list)
-        self.sorted_and_filtered_list = item_list_filter._filter(self.sorted_list)
-        return self.sorted_and_filtered_list
-
-
-# ItemListFilter.filter_and_sort(SearchResult.sorted_list)
+        self._sorted_and_filtered_list = item_list_filter._filter(self.sorted_list)
+        return self._sorted_and_filtered_list
 
 
 class ItemListFilter:
+    @dataclass
+    class AllFilters:
+        price_filter = Filter.PriceFilter(
+            Price(0, Currency.GBP), Price(1000, Currency.GBP)
+        )
+        unit_price_filter = Filter.UnitPriceFilter(
+            UnitPrice(0, Currency.GBP, Unit.KG), UnitPrice(10, Currency.GBP, Unit.KG)
+        )
+        quantity_filter = Filter.QuantityFilter(
+            Quantity(0, Unit.KG), Quantity(10, Unit.KG)
+        )
+        unit_type_filter = Filter.UnitTypeFilter(
+            [UnitType.VOLUME, UnitType.WEIGHT, UnitType.OTHER]
+        )
+        description_filter = Filter.DescriptionFilter("")
+
+        def _filters_as_list(self) -> list[Filter.AttributeFilter]:
+            s = self
+            return [
+                s.price_filter,
+                s.unit_price_filter,
+                s.quantity_filter,
+                s.unit_type_filter,
+                s.description_filter,
+            ]
+
+        def _filter(self, item_list: list[Item]):
+            res = item_list.copy()
+            for f in self._filters_as_list():
+                if f.is_enabled:
+                    res = f.get_filtered_list(res)
+            return res
+
     def __init__(
         self,
-        sorter: Sorter = None,
-        filters: list[Filter.AttributeFilter] = [],
     ):
-        self.sorter = sorter
-        self.filters = filters
+        self.sorter: Sorter = None
+        self.filters: ItemListFilter.AllFilters = ItemListFilter.AllFilters()
 
     def _sort(self, item_list: list[Item]) -> list[Item]:
 
@@ -798,12 +879,14 @@ class ItemListFilter:
 
     def _filter(self, item_list: list[Item]) -> list[Item]:
 
-        result = item_list.copy()
+        res = item_list.copy()
 
-        for filter_i in self.filters:
-            result = filter_i.get_filtered_list(result)
+        # for filter_i in self.filters:
+        #     result = filter_i.get_filtered_list(result)
 
-        return result
+        res = self.filters._filter(res)
+
+        return res
 
     def clear_filters(self):
         self.filters = []
