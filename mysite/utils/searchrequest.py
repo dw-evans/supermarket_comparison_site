@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 
 class GrocerySearchRequest(ABC):
-    def __init__(self):
+    def __init__(self, search_term: str = "", max_items: int = 0):
         print(f"Initializing GrocerySearchRequest...")
         pass
 
@@ -41,7 +41,7 @@ def open_pickle(fpath):
 
 
 def run_and_pickle_request(search_term, max_items=20):
-    from waitrose import WaitroseRequest
+    from plugins.waitrose import WaitroseRequest
 
     # a test to run a search request on multiple supermarkets and store the result in a pickle
     # idea being to not spam servers or to store a test dataset.

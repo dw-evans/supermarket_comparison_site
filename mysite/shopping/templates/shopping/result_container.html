@@ -1,0 +1,53 @@
+{% extends "shopping/home.html" %}
+
+
+
+{% block result_container %}
+
+
+{% for s in g.s_list %}
+<div class="generic-container-medium">
+    <div class="generic-container-dark">
+        <div class="generic-container-dark">
+            <span style="font-size: x-large">Results from waitrose.com for "{{s.query}}"</span>
+        </div>
+    </div>
+    <div class="search-result">
+        {% if s.item_list_displayed %}
+        <div class="result-container">
+            <div class="generic-container-dark">
+                <div class="item-list-container generic-container-dark fancy-scrollbar">
+                    {% for item in s.item_list_displayed %}
+                    <div class="item-container generic-container-light">
+                        <div class="product-details-container">
+                            <div class="thumbnail generic-container-medium">
+                                <img src="{{item.thumbnail}}" alt="">
+                            </div>
+                            <div class=".product-desc generic-container-medium">
+                                {{ item.description }}
+                            </div>
+                            <div class="generic-container-medium product-details-metadata-container">
+                                <div class="generic-container-light">{{item.price}} ({{item.price.to_nzd}})
+                                </div>
+                                <div class="generic-container-light">
+                                    {{item.quantity}}</div>
+                                <div class="generic-container-light">{{item.unit_price}}
+                                    ({{ item.unit_price.to_nzd }}) </div>
+                                <div class="generic-container-light">
+                                    <form action="" method="post">
+                                        {% csrf_token %}
+                                        <button name="add_to_cart" value="{{ item.identifier }}">Add to
+                                            Cart</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

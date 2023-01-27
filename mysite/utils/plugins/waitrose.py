@@ -53,7 +53,7 @@ class WaitroseItem(Item):
     def get_quantity_from_string(string: str) -> Quantity:
         # regex to find a few different cases for waitrose
 
-        print(f"Extracting quantity info from string='{string}'")
+        # print(f"Extracting quantity info from string='{string}'")
 
         qty_info = re.findall(r"\D+|\d*\.?\d+", string.strip(" "))
         # print(qty_info)

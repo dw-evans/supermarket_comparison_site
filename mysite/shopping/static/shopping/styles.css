@@ -176,11 +176,19 @@ main {
 .cart-container div {
     display: flex;
     flex-direction: column;
+    width: 300px
 }
 
 .cart-details {
-    width: clamp(20rem, 20rem)
+    display: flex;
+    flex-direction: column;
+
 }
+
+.cart-details div {
+    flex-direction: column;
+}
+
 
 
 .item-list-container {

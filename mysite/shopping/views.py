@@ -27,14 +27,52 @@ from utils.main import ItemListFilter, SearchResult
 from utils.search import Sorter, SorterEnum, Filter
 
 
-@dataclass
 class CartItem:
-    item: Item
-    pcs: int = 0
+    def __init__(self, item_obj: Item, pcs: int = 0) -> None:
+        self.item_obj = item_obj
+        self.pcs = pcs
+        self.__post_init__()
+
+    def __post_init__(self):
+        print(f"self.identifier={self.identfier}")
 
     @property
     def total_value(self):
-        return self.item.price * self.pcs
+        return self.item_obj.price * self.pcs
+
+    @property
+    def store(self):
+        return self.item_obj.store
+
+    @property
+    def description(self):
+        return self.item_obj.description
+
+    @property
+    def price(self):
+        return self.item_obj.price
+
+    @property
+    def quantity(self):
+        return self.item_obj.quantity
+
+    @property
+    def thumbnail(self):
+        return self.item_obj.thumbnail
+
+    @property
+    def is_null(self):
+        return self.item_obj.is_null
+
+    @property
+    def unit_price(self):
+        return self.item_obj.unit_price
+
+    @property
+    def identfier(self):
+        # be aware that this doesn't actuall work in DTL
+        print(f"getting item object id={self.item_obj.identifier}")
+        return self.item_obj.identifier
 
 
 @dataclass
@@ -45,25 +83,22 @@ class Cart:
     def total_value(self) -> Price:
         return sum(i.total_value for i in self.items)
 
-
-@dataclass
-class ShopSession:
-    shop_id: Store
-
-    query: str = ""
-    query_result: list[Item] = field(default_factory=list)
-    query_filter: ItemListFilter = ItemListFilter()
-
-
-class GlobalSession:
-    def __init__(self):
-        self.shop_sessions = [
-            ShopSession(Store.WAITROSE),
-        ]
-
     @property
-    def s_list(self):
-        return self.shop_sessions
+    def n_items(self):
+        return len(self.items)
+
+    def clear_items(self):
+        self.items = []
+
+
+# @dataclass
+
+# class ShopSession:
+#     shop_id: Store
+
+#     query: str = ""
+#     query_result: list[Item] = field(default_factory=list)
+#     query_filter: ItemListFilter = ItemListFilter()
 
 
 # @dataclass
@@ -97,6 +132,68 @@ class ShopSession:
         # slightly dodgey
         return self.search_result._sorted_and_filtered_list
 
+    def add_item_to_cart_by_id(self, item_identifier: str):
+        filter_result = list(
+            filter(
+                lambda x: str(x.identifier) == item_identifier,
+                self.search_result.initial_list,
+            )
+        )
+        if len(filter_result) == 1:
+
+            item = filter_result[0]
+
+            # crudely ignore doubling adds to cart
+            if item not in [cart_item.item_obj for cart_item in self.cart_items]:
+                print(f"adding id={item_identifier} to cart")
+                self.cart_items.append(CartItem(item, pcs=1))
+
+            else:
+                filter_result = list(
+                    filter(
+                        lambda cart_item: str(cart_item.item_obj.identifier)
+                        == item_identifier,
+                        self.cart_items,
+                    )
+                )
+                if len(filter_result) > 0:
+                    cart_item = filter_result[0]
+                    cart_item.pcs += 1
+
+    def remove_item_from_cart_by_id(self, item_identifier: str):
+        # make sure to get the uuid as a string
+        filter_result = list(
+            filter(
+                lambda x: str(x.item_obj.identifier) == item_identifier, self.cart_items
+            )
+        )
+
+        if len(filter_result) > 0:
+
+            item = filter_result[0]
+
+            # crudely ignore doubling adds to cart
+            if item in self.cart_items:
+                if item.pcs > 1:
+                    item.pcs -= 1
+                else:
+                    self.cart_items.remove(item)
+
+
+class GlobalSession:
+    def __init__(self):
+        self.shop_sessions = [
+            ShopSession(Store.WAITROSE),
+            ShopSession(Store.ASDA),
+        ]
+
+    @property
+    def s_list(self):
+        return self.shop_sessions
+
+    def get_shop_session_by_store(self, store: Store) -> ShopSession:
+        return list(filter(lambda x: x.store == store, self.shop_sessions))[0]
+
 
 # hacky price converter to display in templates
 def to_nzd(obj: Price):
@@ -105,105 +202,119 @@ def to_nzd(obj: Price):
 
 setattr(Price, "to_nzd", to_nzd)
 
+from enum import Enum
 
-def add_item_to_cart_by_id(item_identifier: str):
-    filter_result = list(
-        filter(
-            lambda x: str(x.identifier) == item_identifier, s.search_result.initial_list
-        )
-    )
-    if len(filter_result) == 1:
-
-        item = filter_result[0]
-
-        # crudely ignore doubling adds to cart
-        if item not in [cart_item.item for cart_item in s.cart_items]:
-            print(f"adding id={item_identifier} to cart")
-            s.cart_items.append(CartItem(item, pcs=1))
-
-        else:
-            filter_result = list(
-                filter(
-                    lambda cart_item: str(cart_item.item.identifier) == item_identifier,
-                    s.cart_items,
-                )
-            )
-            if len(filter_result) > 0:
-                cart_item = filter_result[0]
-                cart_item.pcs += 1
+from utils.searchrequest import GrocerySearchRequest
 
 
-def remove_item_from_cart_by_id(item_identifier: str):
-    # make sure to get the uuid as a string
-    filter_result = list(
-        filter(lambda x: str(x.item.identifier) == item_identifier, s.cart_items)
-    )
+class SearchEnum(Enum):
+    def __new__(
+        cls, value, search_request_class: GrocerySearchRequest, item_class: Item
+    ):
+        obj = object.__new__(cls)
+        obj._value_ = value
+        return obj
 
-    if len(filter_result) > 0:
+    def __init__(
+        self, value, search_request_class: GrocerySearchRequest, item_class: Item
+    ):
+        self.search_request_class = search_request_class
+        self.item_class = item_class
 
-        item = filter_result[0]
 
-        # crudely ignore doubling adds to cart
-        if item in s.cart_items:
-            if item.pcs > 1:
-                item.pcs -= 1
-            else:
-                s.cart_items.remove(item)
+import aenum
+
+s = Store.WAITROSE
+aenum.extend_enum(
+    SearchEnum,
+    s.value.upper(),
+    (
+        Store.WAITROSE,
+        WaitroseRequest,
+        WaitroseItem,
+    ),
+)
+
+s = Store.ASDA
+aenum.extend_enum(
+    SearchEnum,
+    s.value.upper(),
+    (
+        Store.ASDA,
+        AsdaRequest,
+        AsdaItem,
+    ),
+)
 
 
 g = GlobalSession()
 
-s = g.s_list[0]
+# s = g.s_list[0]
 
 
 def home(request):
 
-    if request.method == "GET":
-        print(request.GET)
-        # handle a search query
-        if "q" in request.GET:
+    for s in g.s_list:
 
-            # save the search query
-            s.query = request.GET.get("q")
+        if request.method == "GET":
+            print(request.GET)
+            # handle a search query
+            if "q" in request.GET:
 
-            # get the waitrose items
-            items = [
-                WaitroseItem(item)
-                for item in WaitroseRequest(
-                    s.query, max_items=s.max_items
-                ).get_items_as_list()
-            ]
-            items = [item for item in items if not item.is_null]
+                # save the search query
+                s.query = request.GET.get("q")
 
-            s.search_result = SearchResult(items)
+                # # get the waitrose items
+                # items = [
+                #     WaitroseItem(item)
+                #     for item in WaitroseRequest(
+                #         s.query, max_items=s.max_items
+                #     ).get_items_as_list()
+                # ]
+                # items = [item for item in items if not item.is_null]
 
-    if request.method == "POST":
-        print(request.POST)
+                items = [
+                    SearchEnum(s.store).item_class(item)
+                    for item in SearchEnum(s.store)
+                    .search_request_class(s.query, max_items=s.max_items)
+                    .get_items_as_list()
+                ]
 
-        if "add_to_cart" in request.POST:
-            add_item_to_cart_by_id(request.POST.get("add_to_cart"))
+                items = [item for item in items if not item.is_null]
 
-        if "remove_from_cart" in request.POST:
-            remove_item_from_cart_by_id(request.POST.get("remove_from_cart"))
+                s.search_result = SearchResult(items)
 
-        if "sort_by" in request.POST:
-            s.filter.sorter = Sorter(SorterEnum(request.POST.get("sort_by")))
+        if request.method == "POST":
+            print(request.POST)
 
-        if "filter_by" in request.POST:
-            filter_by_val = request.POST.get("filter_by")
-            # print(f"UnitType(filter_by_val)={UnitType(filter_by_val)}")
-            # s.unit_type_filter.toggle_unit_type_accept_list(UnitType(filter_by_val))
+            if "add_to_cart" in request.POST:
+                s.add_item_to_cart_by_id(request.POST.get("add_to_cart"))
 
-            s.filter.filters.unit_type_filter.toggle_unit_type_accept_list(
-                UnitType(filter_by_val)
-            )
-            print(s.filter.filters.unit_type_filter.unit_type_accept_list)
+            if "remove_from_cart" in request.POST:
+                s.remove_item_from_cart_by_id(request.POST.get("remove_from_cart"))
 
-        if "clear_filters" in request.POST:
-            s.filter.clear_filters()
+            if "sort_by" in request.POST:
+                s.filter.sorter = Sorter(SorterEnum(request.POST.get("sort_by")))
 
-    else:
-        pass
+            if "filter_by" in request.POST:
+                filter_by_val = request.POST.get("filter_by")
+                # print(f"UnitType(filter_by_val)={UnitType(filter_by_val)}")
+                # s.unit_type_filter.toggle_unit_type_accept_list(UnitType(filter_by_val))
+
+                s.filter.filters.unit_type_filter.toggle_unit_type_accept_list(
+                    UnitType(filter_by_val)
+                )
+                print(s.filter.filters.unit_type_filter.unit_type_accept_list)
+
+            if "clear_filters" in request.POST:
+                s.filter.clear_filters()
+
+            if "clear_cart" in request.POST:
+                val = request.POST.get("clear_cart")
+                g.get_shop_session_by_store(Store(val)).cart.clear_items()
+
+        else:
+            pass
 
     context = {
         "g": g,
@@ -219,6 +330,7 @@ def home(request):
     )
 
 
+"""
 def add_to_cart(request, item_identifier):
 
     print(f"searching for {item_identifier}")
@@ -236,14 +348,15 @@ def add_to_cart(request, item_identifier):
         item = filter_result[0]
 
         # crudely ignore doubling adds to cart
-        if item not in [cart_item.item for cart_item in s.cart_items]:
+        if item not in [cart_item.item_obj for cart_item in s.cart_items]:
             print(f"adding id={item_identifier} to cart")
             s.cart_items.append(CartItem(item, pcs=1))
 
         else:
             filter_result = list(
                 filter(
-                    lambda cart_item: str(cart_item.item.identifier) == item_identifier,
+                    lambda cart_item: str(cart_item.item_obj.identifier)
+                    == item_identifier,
                     s.cart_items,
                 )
             )
@@ -258,7 +371,7 @@ def remove_from_cart(request, item_identifier):
 
     # make sure to get the uuid as a string
     filter_result = list(
-        filter(lambda x: str(x.item.identifier) == item_identifier, s.cart_items)
+        filter(lambda x: str(x.item_obj.identifier) == item_identifier, s.cart_items)
     )
 
     if len(filter_result) > 0:
@@ -273,3 +386,5 @@ def remove_from_cart(request, item_identifier):
                 s.cart_items.remove(item)
 
     return HttpResponseRedirect(reverse("shopping:home"))
+
+"""

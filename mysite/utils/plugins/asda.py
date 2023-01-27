@@ -49,6 +49,7 @@ class AsdaItem(Item):
         self.price = self.fetch_price()
         self.quantity = self.fetch_quanity()
         self.is_null = False
+        super().__post_init__()
 
     # todo add try excepts to each of these
     def fetch_description(self) -> str:
@@ -60,17 +61,19 @@ class AsdaItem(Item):
         )
 
     def fetch_quanity(self) -> Quantity:
-        size = self.raw_item["item"]["extended_item_info"]["weight"]
-        qty_info = re.findall(r"\D+|\d*\.?\d+", size.strip(" "))
-        if qty_info[1].lower == "x":
-            amount = float(qty_info[0]) * float(qty_info[2])
-        else:
-            amount = float(qty_info[0])
+        # size = self.raw_item["item"]["extended_item_info"]["weight"]
+        # qty_info = re.findall(r"\D+|\d*\.?\d+", size.strip(" "))
+        # if False:  # qty_info[1].lower == "x":
+        #     amount = float(qty_info[0]) * float(qty_info[2])
+        # else:
+        #     amount = float(qty_info[0])
 
-        try:
-            unit = Unit(StoreUnitMap(Store.ASDA).unit_dict[qty_info[-1]])
-        except:
-            unit = Unit.NULL
+        # try:
+        #     unit = Unit(StoreUnitMap(Store.ASDA).unit_dict[qty_info[-1]])
+        # except:
+        #     unit = Unit.NULL
+
+        return Quantity(1, Unit.KG)
 
         return Quantity(
             amount=amount,
@@ -87,7 +90,9 @@ class AsdaRequest(GrocerySearchRequest):
     """Does a post request to the asda search api, and stores the response.
     effective for any page size"""
 
-    def __init__(self, search_term: str):
+    def __init__(self, search_term: str, max_items: int = 0):
+        self.search_term = search_term
+        self.max_items = max_items
         self.query(search_term=search_term)
 
     def query(self, search_term: str):
@@ -228,7 +233,7 @@ class AsdaRequest(GrocerySearchRequest):
                 "is_eat_and_collect": False,
                 "store_id": "4565",
                 "type": "search",
-                "page_size": 1000,
+                "page_size": self.max_items,
                 "page": 1,
                 "request_origin": "gi",
                 # "ship_date": 1669939200000,

@@ -42,6 +42,7 @@
             </div>
         </div>
         {% for s in g.s_list %}
+        {% if s.item_list_displayed %}
         <div class="generic-container-medium">
             <div class="generic-container-dark">
                 <div class="generic-container-dark">
@@ -86,54 +87,63 @@
                 {% endif %}
             </div>
 
+            {% if s.cart_items %}
+
             <div class="generic-container-dark">
                 <div class="generic-container-dark">
                     <span style="font-size: x-large">Your waitrose.com Cart</span>
                 </div>
             </div>
 
+
+
             <div class="search-result">
-
-                {% if s.cart_items %}
-
                 <div class="cart-container">
                     <div class="cart details generic-container-dark">
-                        Cart Summary
-                        Cart Total: xx
-                        Items: xx
+                        <div>Cart Summary
+                            Cart Total: {{s.cart.total_value}}
+                            Items: {{s.cart.n_items}}</div>
+                        <div>
+                            <form action="" method="post">
+                                {% csrf_token %}
+                                <button name="clear_cart" value="{{ s.store.value }}">
+                                    Empty {{ s.store.value }} cart
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
 
                 <div class="result-container">
                     <div class="generic-container-dark">
                         <div class="item-list-container generic-container-dark fancy-scrollbar">
-                            {% for cart_item in s.cart_items %}
+                            {% for item in s.cart_items %}
                             <div class="item-container generic-container-light">
                                 <div class="product-details-container">
                                     <div class="thumbnail generic-container-medium">
-                                        <img src="{{cart_item.item.thumbnail}}" alt="">
+                                        <img src="{{item.thumbnail}}" alt="">
                                     </div>
                                     <div class=".product-desc generic-container-medium">
-                                        {{cart_item.item.description }}
+                                        {{ item.description }}
                                     </div>
                                     <div class="generic-container-medium product-details-metadata-container">
-                                        <div class="generic-container-light">{{cart_item.item.price}}</div>
-                                        <div class="generic-container-light">{{cart_item.item.quantity}}</div>
-                                        <div class="generic-container-light">{{cart_item.item.unit_price}}</div>
-                                        <div class="generic-container-light">{{cart_item.pcs}}
-                                            ({{cart_item.total_value}})
+                                        <div class="generic-container-light">{{item.price}}</div>
+                                        <div class="generic-container-light">{{item.quantity}}</div>
+                                        <div class="generic-container-light">{{item.unit_price}}</div>
+                                        <div class="generic-container-light">{{item.pcs}}
+                                            ({{item.total_value}})
                                         </div>
                                         <div class="generic-container-light">
                                             <form action="" method="post">
                                                 {% csrf_token %}
-                                                <button name="add_to_cart" value="{{ cart_item.item.identifier }}">Add
+                                                <button name="add_to_cart" value="{{ item.item_obj.identifier}}">Add
                                                     to
                                                     Cart</button>
                                             </form>
                                             <form action="" method="post">
                                                 {% csrf_token %}
                                                 <button name="remove_from_cart"
-                                                    value="{{ cart_item.item.identifier }}">Remove</button>
+                                                    value="{{ item.item_obj.identifier }}">Remove</button>
                                             </form>
                                         </div>
 
@@ -146,11 +156,11 @@
                 </div>
             </div>
             {% endif %}
+
         </div>
+        {% endif %}
+
         {% endfor %}
-    </div>
-
-
     </div>
 </main>
 
