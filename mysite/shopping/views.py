@@ -1,7 +1,11 @@
 from django.shortcuts import render
+from django.urls import reverse
+from django.http import HttpResponse, HttpResponseRedirect
 
-from utils.query import run_and_pickle_request, open_those_pickles
-from utils.query import WaitroseRequest, AsdaRequest
+from dataclasses import dataclass, field
+
+import utils.main
+
 from utils.main import (
     Item,
     WaitroseItem,
@@ -13,32 +17,14 @@ from utils.main import (
     UnitType,
 )
 
-from utils.main import ItemListFilter, SorterEnum
-from utils.main import Filter, Sorter
-from utils.main import SorterEnum
-
-from utils.main import SearchResult
-
-
-from dataclasses import dataclass, field
-
 from utils.main import Store
 
-# query = ""
-# items = []
-# cart_items = []
+from utils.main import WaitroseRequest, WaitroseItem
+from utils.main import AsdaRequest, AsdaItem
 
-from django.urls import reverse
-from django.http import HttpResponse, HttpResponseRedirect
+from utils.main import ItemListFilter, SearchResult
 
-
-@dataclass
-class ShopSession:
-    shop_id: Store
-
-    query: str = ""
-    query_result: list[Item] = field(default_factory=list)
-    query_filter: ItemListFilter = ItemListFilter()
+from utils.search import Sorter, SorterEnum, Filter
 
 
 @dataclass
@@ -60,9 +46,30 @@ class Cart:
         return sum(i.total_value for i in self.items)
 
 
-# @dataclass
-class Session:
+@dataclass
+class ShopSession:
+    shop_id: Store
+
+    query: str = ""
+    query_result: list[Item] = field(default_factory=list)
+    query_filter: ItemListFilter = ItemListFilter()
+
+
+class GlobalSession:
     def __init__(self):
+        self.shop_sessions = [
+            ShopSession(Store.WAITROSE),
+        ]
+
+    @property
+    def s_list(self):
+        return self.shop_sessions
+
+
+# @dataclass
+class ShopSession:
+    def __init__(self, store: Store):
+        self.store: Store = store
         self.query: str = ""
         self.max_items: int = 100
         self.items: list[Item] = []
@@ -144,7 +151,9 @@ def remove_item_from_cart_by_id(item_identifier: str):
                 s.cart_items.remove(item)
 
 
-s = Session()
+g = GlobalSession()
+
+s = g.s_list[0]
 
 
 def home(request):
@@ -197,9 +206,10 @@ def home(request):
         pass
 
     context = {
-        "query": s.query,
-        "item_list": s.item_list_displayed,
-        "cart_item_list": s.cart_items,
+        "g": g,
+        # "query": s.query,
+        # "item_list": s.item_list_displayed,
+        # "cart_item_list": s.cart_items,
     }
 
     return render(

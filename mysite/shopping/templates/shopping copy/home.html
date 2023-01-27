@@ -41,19 +41,19 @@
                 </div>
             </div>
         </div>
-        {% for s in g.s_list %}
+
         <div class="generic-container-medium">
             <div class="generic-container-dark">
                 <div class="generic-container-dark">
-                    <span style="font-size: x-large">Results from waitrose.com for "{{s.query}}"</span>
+                    <span style="font-size: x-large">Results from waitrose.com for "{{query}}"</span>
                 </div>
             </div>
             <div class="search-result">
-                {% if s.item_list_displayed %}
+                {% if item_list %}
                 <div class="result-container">
                     <div class="generic-container-dark">
                         <div class="item-list-container generic-container-dark fancy-scrollbar">
-                            {% for item in s.item_list_displayed %}
+                            {% for item in item_list %}
                             <div class="item-container generic-container-light">
                                 <div class="product-details-container">
                                     <div class="thumbnail generic-container-medium">
@@ -94,7 +94,7 @@
 
             <div class="search-result">
 
-                {% if s.cart_items %}
+                {% if cart_item_list %}
 
                 <div class="cart-container">
                     <div class="cart details generic-container-dark">
@@ -107,7 +107,7 @@
                 <div class="result-container">
                     <div class="generic-container-dark">
                         <div class="item-list-container generic-container-dark fancy-scrollbar">
-                            {% for cart_item in s.cart_items %}
+                            {% for cart_item in cart_item_list %}
                             <div class="item-container generic-container-light">
                                 <div class="product-details-container">
                                     <div class="thumbnail generic-container-medium">
@@ -147,7 +147,6 @@
             </div>
             {% endif %}
         </div>
-        {% endfor %}
     </div>
 
 

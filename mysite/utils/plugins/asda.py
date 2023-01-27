@@ -1,125 +1,86 @@
 from __future__ import annotations
 
+import aenum
+
+import re
 import requests
-from abc import ABC, abstractmethod
-import pickle
-from pathlib import Path
+
+from ..datatypes import *
+
+from ..datatypes import Currency, Price
+from ..datatypes import Unit, Quantity
 
 
-class GrocerySearchRequest(ABC):
-    def __init__(self):
-        print(f"Initializing GrocerySearchRequest...")
-        pass
-
-    @abstractmethod
-    def query(self):
-        # main query for search request
-        pass
-
-    @abstractmethod
-    def get_items_as_list(self) -> list:
-        # gets the items as a list, need to have it check all pages
-        pass
-
-    @abstractmethod
-    def get_total_items(self) -> int:
-        # gets the total number of items per the request
-        pass
+from ..searchrequest import GrocerySearchRequest
 
 
-WAITROSE_MAX_REQUEST_SIZE = 128
+from ..store import Store, StoreUnitMap
 
 
-class WaitroseRequest(GrocerySearchRequest):
-    """Does a post request to the waitrose search api and stores the response
-    Needs to be modified to handle item lists > 128 per page"""
+s = "asda"
+# regster the store name in in the enum
+aenum.extend_enum(Store, s.upper(), s.lower())
 
-    MAX_REQUEST_SIZE = 128
+s = Store.ASDA
+# register the store's unit map
+aenum.extend_enum(
+    StoreUnitMap,
+    s.value.upper(),
+    (
+        s,
+        {
+            "l": Unit.L,
+            "kg": Unit.KG,
+            "g": Unit.G,
+            "pk": Unit.PCS,
+        },
+    ),
+)
 
-    def __init__(self, search_term: str, max_items: int = 5000):
-        super().__init__()  # basically just for debugging at the moment
 
-        self.search_term = search_term
-        self.max_items = max_items
+class AsdaItem(Item):
+    # Converting the asda json output into item dataclass structure
+    def __init__(self, raw_item):
+        self.raw_item = raw_item
 
-        self.multi_query()
+        self.store = Store.ASDA
+        self.description = self.fetch_description()
+        self.thumbnail = self.fetch_thumbnail()
+        self.price = self.fetch_price()
+        self.quantity = self.fetch_quanity()
+        self.is_null = False
 
-        # self.query(search_term=search_term)
+    # todo add try excepts to each of these
+    def fetch_description(self) -> str:
+        return self.raw_item["item"]["name"]
 
-    def query(
-        self, search_term: str, start: int, size: int = WAITROSE_MAX_REQUEST_SIZE
-    ) -> "httpresponse":
-
-        print(
-            f"Sending request to waitrose.com for '{search_term}', start={start}, size={size}"
-        )  # for debugging
-
-        url = "https://www.waitrose.com/api/content-prod/v2/cms/publish/productcontent/search/-1"
-
-        querystring = {"clientType": "WEB_APP"}
-
-        payload = {
-            "customerSearchRequest": {
-                "queryParams": {
-                    "size": size,
-                    "searchTerm": search_term,
-                    "sortBy": "RELEVANCE",
-                    "searchTags": [],
-                    "filterTags": [],
-                    "orderId": "0",
-                    "categoryLevel": 1,
-                    "start": start,
-                }
-            }
-        }
-        headers = {"authorization": "Bearer unauthenticated"}
-
-        return requests.request(
-            "POST", url, json=payload, headers=headers, params=querystring
+    def fetch_price(self) -> Price:
+        return Price(
+            float(self.raw_item["price"]["price_info"]["price"][1:]), Currency.GBP
         )
 
-    def get_total_items(self) -> int:
-        return int(
-            self.query(search_term=self.search_term, start=1, size=1).json()[
-                "totalMatches"
-            ]
+    def fetch_quanity(self) -> Quantity:
+        size = self.raw_item["item"]["extended_item_info"]["weight"]
+        qty_info = re.findall(r"\D+|\d*\.?\d+", size.strip(" "))
+        if qty_info[1].lower == "x":
+            amount = float(qty_info[0]) * float(qty_info[2])
+        else:
+            amount = float(qty_info[0])
+
+        try:
+            unit = Unit(StoreUnitMap(Store.ASDA).unit_dict[qty_info[-1]])
+        except:
+            unit = Unit.NULL
+
+        return Quantity(
+            amount=amount,
+            unit=unit,
         )
 
-    def multi_query(self):
-        self.response_list = []
-
-        # if max_requested items is less or eq to default page size
-        if self.max_items <= WAITROSE_MAX_REQUEST_SIZE:
-            self.response_list.append(
-                self.query(
-                    search_term=self.search_term,
-                    start=1,
-                    size=self.max_items,
-                )
-            )
-            return
-
-        # normal requests (>128)
-        for i in range(
-            min(self.get_total_items(), self.max_items) // WAITROSE_MAX_REQUEST_SIZE + 1
-        ):
-            self.response_list.append(
-                self.query(
-                    search_term=self.search_term,
-                    start=1 + WAITROSE_MAX_REQUEST_SIZE * i,
-                    size=WAITROSE_MAX_REQUEST_SIZE,
-                )
-            )
-        return
-
-    def get_items_as_list(self) -> list:
-        res = []
-        for response in self.response_list:
-            res += response.json()["componentsAndProducts"]
-        print(
-            f"Successfully retrieved {len(res)} items. You requested a maximum of {self.max_items} (default:5000)"
+    def fetch_thumbnail(self) -> str:
+        return "https://ui.assets-asda.com/dm/asdagroceries/{}?$ProdList$=&fmt=webp&qlt=50".format(
+            self.raw_item["item"]["upc_numbers"][0]
         )
-        return res
 
 
 class AsdaRequest(GrocerySearchRequest):
@@ -294,40 +255,3 @@ class AsdaRequest(GrocerySearchRequest):
         return self.response.json()["data"]["tempo_cms_content"]["zones"][1]["configs"][
             "products"
         ]["items"]
-
-
-def to_pickle(data, fpath) -> None:
-    # writes data to a pkl file
-    with open(fpath, "wb+") as f:
-        pickle.dump(data, f)
-
-
-def open_pickle(fpath):
-    # opens data from a binary pkl file
-    with open(fpath, "rb") as f:
-        data = pickle.load(f)
-    return data
-
-
-def run_and_pickle_request(search_term, max_items=20):
-    # a test to run a search request on multiple supermarkets and store the result in a pickle
-    # idea being to not spam servers or to store a test dataset.
-
-    b = WaitroseRequest(search_term=search_term, max_items=max_items)
-
-    path2 = Path(__file__).parent / "pkl/waitrose.pkl"
-    to_pickle(b, path2)
-
-    # a = AsdaRequest(search_term=search_term)
-
-    # path1 = Path(__file__).parent / "pkl/asda.pkl"
-    # to_pickle(a, path1)
-
-
-def open_those_pickles() -> "pkl":
-    # opening the pickles from run and pickle request.
-    path2 = Path(__file__).parent / "pkl/waitrose.pkl"
-
-    waitrose = open_pickle(path2)
-
-    return waitrose
