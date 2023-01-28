@@ -27,12 +27,11 @@
                                 {{ item.description }}
                             </div>
                             <div class="generic-container-medium product-details-metadata-container">
-                                <div class="generic-container-light">{{item.price}} ({{item.price.to_nzd}})
+                                <div class="generic-container-light">{{item.price}}
                                 </div>
                                 <div class="generic-container-light">
                                     {{item.quantity}}</div>
-                                <div class="generic-container-light">{{item.unit_price}}
-                                    ({{ item.unit_price.to_nzd }}) </div>
+                                <div class="generic-container-light">{{item.unit_price} </div>
                                 <div class="generic-container-light">
                                     <form action="" method="post">
                                         {% csrf_token %}

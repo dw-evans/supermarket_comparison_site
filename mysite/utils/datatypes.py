@@ -280,7 +280,11 @@ class Item(ABC):
 
     @property
     def unit_price(self):
-        return UnitPrice.calculate(
-            price=self.price,
-            quantity=self.quantity,
-        )
+        try:
+            return UnitPrice.calculate(
+                price=self.price,
+                quantity=self.quantity,
+            )
+        except:
+            print(f"UnitPrice.calculate({self.price}, {self.quantity}) failed")
+            return UnitPrice(self.price.amount, self.price.curr, self.quantity.unit)

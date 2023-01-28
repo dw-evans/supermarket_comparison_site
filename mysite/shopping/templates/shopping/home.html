@@ -46,7 +46,7 @@
         <div class="generic-container-medium">
             <div class="generic-container-dark">
                 <div class="generic-container-dark">
-                    <span style="font-size: x-large">Results from waitrose.com for "{{s.query}}"</span>
+                    <span style="font-size: x-large">Results from {{s.site_name}} for "{{s.query}}"</span>
                 </div>
             </div>
             <div class="search-result">
@@ -64,12 +64,11 @@
                                         {{ item.description }}
                                     </div>
                                     <div class="generic-container-medium product-details-metadata-container">
-                                        <div class="generic-container-light">{{item.price}} ({{item.price.to_nzd}})
+                                        <div class="generic-container-light">{{item.price}}
                                         </div>
                                         <div class="generic-container-light">
                                             {{item.quantity}}</div>
-                                        <div class="generic-container-light">{{item.unit_price}}
-                                            ({{ item.unit_price.to_nzd }}) </div>
+                                        <div class="generic-container-light">{{item.unit_price}}</div>
                                         <div class="generic-container-light">
                                             <form action="" method="post">
                                                 {% csrf_token %}

@@ -8,14 +8,14 @@ from utils.query import *
 
 def test_waitroseitem_qty_from_regex1():
     a = "6x35g"
-    res = WaitroseItem.get_quantity_from_string(a)
+    res = WaitroseItem._get_quantity_from_string(a)
 
     assert res == Quantity(6 * 35, Unit.G)
 
 
 def test_waitroseitem_qty_from_regex2():
     a = "6litre"
-    res = WaitroseItem.get_quantity_from_string(a)
+    res = WaitroseItem._get_quantity_from_string(a)
 
     assert res == Quantity(6, Unit.L)
 

@@ -12,73 +12,120 @@ from ..datatypes import Unit, Quantity
 
 
 from ..searchrequest import GrocerySearchRequest
+from ..search import SearchEnum
 
 
 from ..store import Store, StoreUnitMap
 
 
-s = "asda"
-# regster the store name in in the enum
-aenum.extend_enum(Store, s.upper(), s.lower())
+def register():
+    s = "asda"
+    if not s in [store.value for store in Store]:
+        # regster the store name in in the enum
+        aenum.extend_enum(Store, s.upper(), s.lower())
 
-s = Store.ASDA
-# register the store's unit map
-aenum.extend_enum(
-    StoreUnitMap,
-    s.value.upper(),
-    (
-        s,
-        {
-            "l": Unit.L,
-            "kg": Unit.KG,
-            "g": Unit.G,
-            "pk": Unit.PCS,
-        },
-    ),
-)
+        s = Store.ASDA
+        # register the store's unit map
+        aenum.extend_enum(
+            StoreUnitMap,
+            s.value.upper(),
+            (
+                s,
+                {
+                    "l": Unit.L,
+                    "kg": Unit.KG,
+                    "g": Unit.G,
+                    "pk": Unit.PCS,
+                },
+            ),
+        )
+
+        s = Store.ASDA
+        aenum.extend_enum(
+            SearchEnum,
+            s.value.upper(),
+            (
+                Store.ASDA,
+                AsdaRequest,
+                AsdaItem,
+            ),
+        )
 
 
 class AsdaItem(Item):
     # Converting the asda json output into item dataclass structure
     def __init__(self, raw_item):
+        super().__post_init__()
         self.raw_item = raw_item
 
         self.store = Store.ASDA
-        self.description = self.fetch_description()
+        self.description = self._fetch_description()
         self.thumbnail = self.fetch_thumbnail()
-        self.price = self.fetch_price()
-        self.quantity = self.fetch_quanity()
+        self.price = self._fetch_price()
+        self.quantity = self._fetch_quanity()
         self.is_null = False
-        super().__post_init__()
 
     # todo add try excepts to each of these
-    def fetch_description(self) -> str:
+    def _fetch_description(self) -> str:
         return self.raw_item["item"]["name"]
 
-    def fetch_price(self) -> Price:
+    def _fetch_price(self) -> Price:
         return Price(
             float(self.raw_item["price"]["price_info"]["price"][1:]), Currency.GBP
         )
 
-    def fetch_quanity(self) -> Quantity:
-        # size = self.raw_item["item"]["extended_item_info"]["weight"]
-        # qty_info = re.findall(r"\D+|\d*\.?\d+", size.strip(" "))
-        # if False:  # qty_info[1].lower == "x":
-        #     amount = float(qty_info[0]) * float(qty_info[2])
-        # else:
-        #     amount = float(qty_info[0])
+    def _get_quantity_root(self):
+        # pulls the raw root of quantity strying
+        return self.raw_item["item"]["extended_item_info"]["weight"]
 
-        # try:
-        #     unit = Unit(StoreUnitMap(Store.ASDA).unit_dict[qty_info[-1]])
-        # except:
-        #     unit = Unit.NULL
+    def _get_qty_info_from_string(self, string):
+        return re.findall(r"\D+|\d*\.?\d+", string.strip(" "))
 
-        return Quantity(1, Unit.KG)
+    def _get_quantity_from_string(self, string: str) -> Quantity:
+
+        qty_info = self._get_qty_info_from_string(string)
+
+        # print(f"id={self.identifier} qty_info={qty_info}")
+
+        # not sure if the 12x36g stuff is on asda too...
+        if qty_info[1].lower() == "x":
+            amount = float(qty_info[0]) * float(qty_info[2])
+        else:
+            amount = float(qty_info[0])
+
+        try:
+            unit = Unit(StoreUnitMap(Store.ASDA).unit_dict[qty_info[-1]])
+        except:
+            unit = Unit.NULL
+
+        # print(f"id={self.identifier} qty={Quantity(amount, unit)}")
 
         return Quantity(
             amount=amount,
             unit=unit,
         )
+
+    def _fetch_quanity(self) -> Quantity:
+        # again some shitty catches for
+        try:
+            size = self._get_quantity_root()
+            return self._get_quantity_from_string(size)
+        except:
+            q = Quantity(1, Unit.NULL)
+            try:
+                s = self._get_qty_info_from_string(self._get_quantity_root())
+
+                a = self.raw_item["price"]["price_info"]["avg_weight"]
+                q.amount = float(a)
+
+                if s[0].lower() == "per kg":
+                    q.unit = Unit.KG_TYP
+            except:
+                pass
+
+            # print(f"id={self.identifier} q={q}")
+
+            return q
 
     def fetch_thumbnail(self) -> str:
         return "https://ui.assets-asda.com/dm/asdagroceries/{}?$ProdList$=&fmt=webp&qlt=50".format(

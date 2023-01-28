@@ -7,6 +7,23 @@ from enum import Enum
 
 from .datatypes import Item, Price, UnitPrice, Currency, Quantity, Unit, UnitType
 
+from .searchrequest import GrocerySearchRequest
+
+
+class SearchEnum(Enum):
+    def __new__(
+        cls, value, search_request_class: GrocerySearchRequest, item_class: Item
+    ):
+        obj = object.__new__(cls)
+        obj._value_ = value
+        return obj
+
+    def __init__(
+        self, value, search_request_class: GrocerySearchRequest, item_class: Item
+    ):
+        self.search_request_class = search_request_class
+        self.item_class = item_class
+
 
 class SorterEnum(Enum):
     """stores price sorting types"""
@@ -63,29 +80,29 @@ class Sorter:
 
         # Price sorting
         if sorter_enum == SorterEnum.HIGHEST_PRICE:
-            print("sorting by highest price")
+            # print("sorting by highest price")
             return self.sorter(item_list, self._item_price_amount, reverse=True)
         elif sorter_enum == SorterEnum.LOWEST_PRICE:
-            print("sortin by lowest price")
+            # print("sortin by lowest price")
             return self.sorter(item_list, self._item_price_amount, reverse=False)
         #  Unit price sorting
 
         elif sorter_enum == SorterEnum.HIGHEST_UNIT_PRICE:
-            print("sorting by highest unit price")
+            # print("sorting by highest unit price")
             return self.sorter(item_list, self._item_unit_price_amount, reverse=True)
         elif sorter_enum == SorterEnum.LOWEST_UNIT_PRICE:
-            print("sorting by lowest unit price")
+            # print("sorting by lowest unit price")
             return self.sorter(item_list, self._item_unit_price_amount, reverse=False)
         # Quantity sorting
         elif sorter_enum == SorterEnum.HIGHEST_QUANTITY:
-            print("sorting by unit_type then highest quantity")
+            # print("sorting by unit_type then highest quantity")
             new_item_list = self.sorter(item_list, self._item_unit_type, reverse=False)
             new_item_list = self.sorter(
                 new_item_list, self._item_quantity_amount_in_si, reverse=True
             )
             return new_item_list
         elif sorter_enum == SorterEnum.LOWEST_QUANTITY:
-            print("sorting by unit_type then lowest quantity")
+            # print("sorting by unit_type then lowest quantity")
             new_item_list = self.sorter(item_list, self._item_unit_type, reverse=False)
             new_item_list = self.sorter(
                 new_item_list, self._item_quantity_amount_in_si, reverse=False
@@ -103,14 +120,14 @@ class Filter:
     class AttributeFilter(ABC):
         """generic attribute filter"""
 
+        def __post_init__(self):
+            self.disable()
+
         def disable(self):
             self.is_enabled = False
 
         def enable(self):
             self.is_enabled = True
-
-        def __post_init__(self):
-            self.disable()
 
         def toggle_enable(self):
             self.is_enabled = not self.is_enabled
@@ -259,9 +276,26 @@ class Filter:
                 )
             )
 
-    @dataclass
     class UnitTypeFilter(AttributeFilter):
-        unit_type_accept_list: list[UnitType] = field(default_factory=list)
+        # somehow something else breaks if the default factory is removed....
+
+        # unit_type_accept_list: list[UnitType] = field(
+        #     default_factory=[UnitType.VOLUME, UnitType.WEIGHT, UnitType.OTHER]
+        # )
+
+        def __init__(
+            self,
+            unit_type_accept_list=[
+                UnitType.VOLUME,
+                UnitType.WEIGHT,
+                UnitType.OTHER,
+            ],
+        ):
+            self.unit_type_accept_list = unit_type_accept_list
+            self.__post_init__()
+
+        # def __init__(self, unit_type_accept_list=[]):
+        #     self.unit_type_accept_list: list[UnitType]
 
         def __post_init__(self):
             return super().__post_init__()
@@ -297,9 +331,12 @@ class Filter:
             return self
 
         def toggle_unit_type_accept_list(self, filter_type: UnitType):
+            # print(f"toggling {filter_type}")
             if filter_type in self.unit_type_accept_list:
+                # print(f"removing {filter_type}")
                 self.unit_type_accept_list.remove(filter_type)
             else:
+                # print(f"adding {filter_type}")
                 self.unit_type_accept_list.append(filter_type)
 
 
@@ -372,19 +409,9 @@ class ItemListFilter:
     def _filter(self, item_list: list[Item]) -> list[Item]:
 
         res = item_list.copy()
-
-        # for filter_i in self.filters:
-        #     result = filter_i.get_filtered_list(result)
-
         res = self.filters._filter(res)
 
         return res
-
-    def clear_filters(self):
-        self.filters = []
-
-    def set_filters(self, filters: list[Filter.AttributeFilter]):
-        self.filters = filters
 
     def get_state(self):
         # something to quickly get the states of all the filters,

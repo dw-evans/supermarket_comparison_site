@@ -12,27 +12,43 @@ from ..searchrequest import GrocerySearchRequest
 
 # regster the store name in in the enum
 
-s = "waitrose"
-# if not s in set(item.value for item in Store):
-aenum.extend_enum(Store, s.upper(), s.lower())
 
-s = Store.WAITROSE
-# if not s in set(item.value for item in Store):
-aenum.extend_enum(
-    StoreUnitMap,
-    s.value.upper(),
-    (
-        s,
-        {
-            "litre": Unit.L,
-            "ml": Unit.ML,
-            "kg": Unit.KG,
-            "g": Unit.G,
-            "s": Unit.PCS,
-            "cl": Unit.CL,
-        },
-    ),
-)
+def register():
+    s = "waitrose"
+    # if not s in set(item.value for item in Store):
+    if not s in [store.value for store in Store]:
+        aenum.extend_enum(Store, s.upper(), s.lower())
+
+        s = Store.WAITROSE
+        # if not s in set(item.value for item in Store):
+        aenum.extend_enum(
+            StoreUnitMap,
+            s.value.upper(),
+            (
+                s,
+                {
+                    "litre": Unit.L,
+                    "ml": Unit.ML,
+                    "kg": Unit.KG,
+                    "g": Unit.G,
+                    "s": Unit.PCS,
+                    "cl": Unit.CL,
+                },
+            ),
+        )
+
+        from ..search import SearchEnum
+
+        s = Store.WAITROSE
+        aenum.extend_enum(
+            SearchEnum,
+            s.value.upper(),
+            (
+                Store.WAITROSE,
+                WaitroseRequest,
+                WaitroseItem,
+            ),
+        )
 
 
 class WaitroseItem(Item):
@@ -50,7 +66,7 @@ class WaitroseItem(Item):
         super().__post_init__()
 
     @staticmethod
-    def get_quantity_from_string(string: str) -> Quantity:
+    def _get_quantity_from_string(string: str) -> Quantity:
         # regex to find a few different cases for waitrose
 
         # print(f"Extracting quantity info from string='{string}'")
@@ -98,14 +114,14 @@ class WaitroseItem(Item):
         except:
             return Price(0, Currency.GBP)
 
-    def get_quantity_root(self) -> "dict or str":
+    def _get_quantity_root(self) -> "dict or str":
         # pulls the raw root of quantity strying
         return self.raw_item["searchProduct"]["size"]
 
     def fetch_quanity(self) -> Quantity:
         try:
-            size = self.get_quantity_root()
-            return self.get_quantity_from_string(size)
+            size = self._get_quantity_root()
+            return self._get_quantity_from_string(size)
 
         except:
             q = Quantity(1, Unit.NULL)

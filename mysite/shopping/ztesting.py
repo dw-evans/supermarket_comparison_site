@@ -1,8 +1,12 @@
-from django.shortcuts import render
-from django.urls import reverse
-from django.http import HttpResponse, HttpResponseRedirect
-
 from dataclasses import dataclass, field
+
+import sys
+
+sys.path.append(
+    r"C:\Users\Daniel Evans\Documents\GitHub\supermarket_comparison_site\mysite"
+)
+
+print(sys.path)
 
 import utils.main
 
@@ -121,17 +125,7 @@ class ShopSession:
         self.search_result: SearchResult = SearchResult([])
         self.cart: Cart = Cart()
 
-        # self.unit_type_filter = Filter.UnitTypeFilter(
-        #     [
-
-        #     ]
-        # )
-
         self.filter: ItemListFilter = ItemListFilter()
-
-        # for f in self.filter.filters._filters_as_list():
-        #     if f.__name__ == "unit_type_filter":
-        #         f.enable()
 
         self.filter.filters.unit_type_filter.enable()
 
@@ -223,74 +217,4 @@ setattr(Price, "to_nzd", to_nzd)
 
 g = GlobalSession()
 
-
-def home(request):
-
-    for s in g.s_list:
-
-        if request.method == "GET":
-            print(request.GET)
-            # handle a search query
-            if "q" in request.GET:
-
-                # save the search query
-                s.query = request.GET.get("q")
-
-                items = [
-                    SearchEnum(s.store).item_class(item)
-                    for item in SearchEnum(s.store)
-                    .search_request_class(s.query, max_items=s.max_items)
-                    .get_items_as_list()
-                ]
-
-                items = [item for item in items if not item.is_null]
-
-                s.search_result = SearchResult(items)
-
-        if request.method == "POST":
-            print(request.POST)
-
-            if "add_to_cart" in request.POST:
-                s.add_item_to_cart_by_id(request.POST.get("add_to_cart"))
-
-            if "remove_from_cart" in request.POST:
-                s.remove_item_from_cart_by_id(request.POST.get("remove_from_cart"))
-
-            if "sort_by" in request.POST:
-                s.filter.sorter = Sorter(SorterEnum(request.POST.get("sort_by")))
-
-            if "filter_by" in request.POST:
-                filter_by_val = request.POST.get("filter_by")
-                # print(f"UnitType(filter_by_val)={UnitType(filter_by_val)}")
-                # s.unit_type_filter.toggle_unit_type_accept_list(UnitType(filter_by_val))
-
-                print(f"filter-object-before-click={s.filter.filters.unit_type_filter}")
-                print(f"clicked={UnitType(filter_by_val)}")
-
-                s.filter.filters.unit_type_filter.toggle_unit_type_accept_list(
-                    UnitType(filter_by_val)
-                )
-                print(
-                    f"store={s.store} unittypes_accepted={s.filter.filters.unit_type_filter.unit_type_accept_list}"
-                )
-
-            if "clear_filters" in request.POST:
-                # s.filter.clear_filters()
-                pass
-
-            if "clear_cart" in request.POST:
-                val = request.POST.get("clear_cart")
-                g.get_shop_session_by_store(Store(val)).cart.clear_items()
-
-        else:
-            pass
-
-    context = {
-        "g": g,
-    }
-
-    return render(
-        request=request,
-        template_name="shopping/home.html",
-        context=context,
-    )
+print("done")
