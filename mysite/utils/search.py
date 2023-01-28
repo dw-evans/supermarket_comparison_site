@@ -358,21 +358,22 @@ class SearchResult:
 
 
 class ItemListFilter:
-    @dataclass
     class AllFilters:
-        price_filter = Filter.PriceFilter(
-            Price(0, Currency.GBP), Price(1000, Currency.GBP)
-        )
-        unit_price_filter = Filter.UnitPriceFilter(
-            UnitPrice(0, Currency.GBP, Unit.KG), UnitPrice(10, Currency.GBP, Unit.KG)
-        )
-        quantity_filter = Filter.QuantityFilter(
-            Quantity(0, Unit.KG), Quantity(10, Unit.KG)
-        )
-        unit_type_filter = Filter.UnitTypeFilter(
-            [UnitType.VOLUME, UnitType.WEIGHT, UnitType.OTHER]
-        )
-        description_filter = Filter.DescriptionFilter("")
+        def __init__(self):
+            self.price_filter = Filter.PriceFilter(
+                Price(0, Currency.GBP), Price(1000, Currency.GBP)
+            )
+            self.unit_price_filter = Filter.UnitPriceFilter(
+                UnitPrice(0, Currency.GBP, Unit.KG),
+                UnitPrice(10, Currency.GBP, Unit.KG),
+            )
+            self.quantity_filter = Filter.QuantityFilter(
+                Quantity(0, Unit.KG), Quantity(10, Unit.KG)
+            )
+            self.unit_type_filter = Filter.UnitTypeFilter(
+                [UnitType.VOLUME, UnitType.WEIGHT, UnitType.OTHER]
+            )
+            self.description_filter = Filter.DescriptionFilter("")
 
         def _filters_as_list(self) -> list[Filter.AttributeFilter]:
             s = self
@@ -413,8 +414,5 @@ class ItemListFilter:
 
         return res
 
-    def get_state(self):
-        # something to quickly get the states of all the filters,
-        # e.g. qty/price/unit-price upper/lower... description, unit type
-        return
-        return {"sorter": self.sorter, "filters": self.filters}
+    def clear_filters(self):
+        self.filters = ItemListFilter.AllFilters()

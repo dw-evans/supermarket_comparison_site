@@ -226,12 +226,16 @@ g = GlobalSession()
 
 def home(request):
 
-    for s in g.s_list:
+    # for s in g.s_list:
 
-        if request.method == "GET":
-            print(request.GET)
-            # handle a search query
-            if "q" in request.GET:
+    if request.method == "GET":
+
+        print(request.GET)
+
+        # handle a search query
+        if "q" in request.GET:
+
+            for s in g.s_list:
 
                 # save the search query
                 s.query = request.GET.get("q")
@@ -247,20 +251,34 @@ def home(request):
 
                 s.search_result = SearchResult(items)
 
-        if request.method == "POST":
-            print(request.POST)
+    if request.method == "POST":
+        print(request.POST)
 
-            if "add_to_cart" in request.POST:
-                s.add_item_to_cart_by_id(request.POST.get("add_to_cart"))
+        if "add_to_cart" in request.POST:
+            val: str = request.POST.get("add_to_cart")
+            store_value, item_id = val.split("_")
 
-            if "remove_from_cart" in request.POST:
-                s.remove_item_from_cart_by_id(request.POST.get("remove_from_cart"))
+            s = g.get_shop_session_by_store(Store(store_value))
 
-            if "sort_by" in request.POST:
+            s.add_item_to_cart_by_id(item_id)
+
+            # s.add_item_to_cart_by_id(request.POST.get("add_to_cart"))
+
+        if "remove_from_cart" in request.POST:
+            val: str = request.POST.get("remove_from_cart")
+            store_value, item_id = val.split("_")
+
+            s = g.get_shop_session_by_store(Store(store_value))
+            s.remove_item_from_cart_by_id(request.POST.get("remove_from_cart"))
+
+        if "sort_by" in request.POST:
+            for s in g.s_list:
                 s.filter.sorter = Sorter(SorterEnum(request.POST.get("sort_by")))
 
-            if "filter_by" in request.POST:
-                filter_by_val = request.POST.get("filter_by")
+        if "filter_by" in request.POST:
+            filter_by_val = request.POST.get("filter_by")
+
+            for s in g.s_list:
                 # print(f"UnitType(filter_by_val)={UnitType(filter_by_val)}")
                 # s.unit_type_filter.toggle_unit_type_accept_list(UnitType(filter_by_val))
 
@@ -274,16 +292,18 @@ def home(request):
                     f"store={s.store} unittypes_accepted={s.filter.filters.unit_type_filter.unit_type_accept_list}"
                 )
 
-            if "clear_filters" in request.POST:
-                # s.filter.clear_filters()
-                pass
-
-            if "clear_cart" in request.POST:
-                val = request.POST.get("clear_cart")
-                g.get_shop_session_by_store(Store(val)).cart.clear_items()
-
-        else:
+        if "clear_filters" in request.POST:
+            for s in g.s_list:
+                s.filter.clear_filters()
+            # s.filter.clear_filters()
             pass
+
+        if "clear_cart" in request.POST:
+            val = request.POST.get("clear_cart")
+            g.get_shop_session_by_store(Store(val)).cart.clear_items()
+
+    else:
+        pass
 
     context = {
         "g": g,

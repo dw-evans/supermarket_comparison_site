@@ -35,7 +35,7 @@
                         <button name="filter_by" value="weight">UnitType.Weight</button>
                         <button name="filter_by" value="volume">UnitType.Volume</button>
                         <button name="filter_by" value="other">UnitType.Other</button>
-                        <button name="clear_filters" value="other">Clear filters</button>
+                        <button name="clear_filters" value="">Clear filters</button>
 
                     </form>
                 </div>
@@ -72,7 +72,8 @@
                                         <div class="generic-container-light">
                                             <form action="" method="post">
                                                 {% csrf_token %}
-                                                <button name="add_to_cart" value="{{ item.identifier }}">Add to
+                                                <button name="add_to_cart"
+                                                    value="{{s.store.value}}_{{item.identifier}}">Add to
                                                     Cart</button>
                                             </form>
                                         </div>
@@ -90,7 +91,7 @@
 
             <div class="generic-container-dark">
                 <div class="generic-container-dark">
-                    <span style="font-size: x-large">Your waitrose.com Cart</span>
+                    <span style="font-size: x-large">Your {{s.site_name}} cart</span>
                 </div>
             </div>
 
@@ -135,14 +136,15 @@
                                         <div class="generic-container-light">
                                             <form action="" method="post">
                                                 {% csrf_token %}
-                                                <button name="add_to_cart" value="{{ item.item_obj.identifier}}">Add
+                                                <button name="add_to_cart"
+                                                    value="{{s.store.value}}_{{item.item_obj.identifier}}">Add
                                                     to
                                                     Cart</button>
                                             </form>
                                             <form action="" method="post">
                                                 {% csrf_token %}
                                                 <button name="remove_from_cart"
-                                                    value="{{ item.item_obj.identifier }}">Remove</button>
+                                                    value="{{s.store.value}}_{{item.item_obj.identifier}}">Remove</button>
                                             </form>
                                         </div>
 
